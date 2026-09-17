@@ -1,7 +1,12 @@
+node_modules
 dist
 coverage
+.kilo
 src-tauri/target
 src-tauri/gen
 src-tauri/icons
+src-tauri/binaries
 package-lock.json
-assets
+Cargo.lock
+# Authored specification documents are kept exactly as written.
+src/docs
