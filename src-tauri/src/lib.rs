@@ -12,6 +12,7 @@ pub mod logging;
 pub mod media;
 pub mod project;
 pub mod state;
+pub mod timeline;
 
 use serde::Serialize;
 use tauri::Manager;
@@ -67,6 +68,8 @@ pub fn run() {
             commands::jobs::list_jobs,
             commands::jobs::cancel_job,
             commands::jobs::clear_finished_jobs,
+            commands::timeline::load_timeline,
+            commands::timeline::save_timeline,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -4,6 +4,7 @@ pub mod migrations;
 pub mod project_schema;
 pub mod projects;
 pub mod settings;
+pub mod timeline;
 
 use std::path::Path;
 use std::time::Duration;

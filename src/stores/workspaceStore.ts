@@ -13,6 +13,7 @@ import {
 } from "@/infrastructure/tauri/projects";
 import { getAppInfo, resolveFfmpeg } from "@/infrastructure/tauri/system";
 import { useMediaStore } from "./mediaStore";
+import { useTimelineStore, isTimelineDirty } from "./timelineStore";
 
 type WorkspaceStatus = "booting" | "picker" | "editor";
 
@@ -54,6 +55,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       if (project) {
         set({ appInfo, ffmpeg, project, status: "editor" });
         await useMediaStore.getState().load();
+        await useTimelineStore.getState().load(project);
         return;
       }
 
@@ -86,6 +88,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const project = await createProjectCommand(name, parentDir);
       set({ project, status: "editor", busy: false });
       await useMediaStore.getState().load();
+      await useTimelineStore.getState().load(project);
       return true;
     } catch (error) {
       set({ error: errorMessage(error), busy: false });
@@ -99,6 +102,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const project = await openProjectCommand(rootPath);
       set({ project, status: "editor", busy: false });
       await useMediaStore.getState().load();
+      await useTimelineStore.getState().load(project);
       return true;
     } catch (error) {
       set({ error: errorMessage(error), busy: false });
@@ -107,12 +111,19 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   closeProject: async () => {
+    if (useMediaStore.getState().importing) {
+      set({ error: "Wait for the media import to finish before closing the project." });
+      return;
+    }
+    if (isTimelineDirty(useTimelineStore.getState()) && !(await useTimelineStore.getState().save())) return;
     try {
       await closeProjectCommand();
     } catch (error) {
       set({ error: errorMessage(error) });
+      return;
     }
     useMediaStore.getState().reset();
+    useTimelineStore.getState().reset();
     set({ project: null, status: "picker" });
     await get().loadRecentProjects();
   },

@@ -1,5 +1,6 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { create } from "zustand";
+import { useTimelineStore } from "./timelineStore";
 
 import { errorMessage } from "@/domain/errors";
 import type { DerivativeKind, MediaAsset } from "@/domain/media";
@@ -87,6 +88,7 @@ export const useMediaStore = create<MediaState>((set, get) => ({
   },
 
   importFiles: async () => {
+    try {
     const selection = await open({
       multiple: true,
       title: "Import media",
@@ -97,6 +99,9 @@ export const useMediaStore = create<MediaState>((set, get) => ({
     }
     const paths = Array.isArray(selection) ? selection : [selection];
     await get().importPaths(paths);
+    } catch (error) {
+      set({ error: errorMessage(error) });
+    }
   },
 
   importPaths: async (paths) => {
@@ -125,10 +130,14 @@ export const useMediaStore = create<MediaState>((set, get) => ({
 
   select: (mediaId) => {
     set({ selectedId: mediaId });
+    useTimelineStore.setState({ mode: "source", playing: false });
   },
 
   remove: async (mediaId) => {
     try {
+      if (useTimelineStore.getState().timeline?.tracks.some((track) => track.clips.some((clip) => clip.sourceMediaId === mediaId))) {
+        throw new Error("Remove this media's clips from the timeline and save before removing the media.");
+      }
       await removeMedia(mediaId);
       await get().load();
     } catch (error) {
@@ -151,7 +160,7 @@ export const useMediaStore = create<MediaState>((set, get) => ({
   },
 
   reset: () => {
-    set({ assets: [], selectedId: null, error: null, notice: null });
+    set({ assets: [], selectedId: null, error: null, notice: null, importing: false, loading: false });
   },
 }));
 

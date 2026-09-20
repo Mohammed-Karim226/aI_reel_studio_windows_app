@@ -5,8 +5,23 @@ import { useMediaStore, selectedAsset } from "@/stores/mediaStore";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { Filmstrip } from "./Filmstrip";
 import { Waveform } from "./Waveform";
+import { SourceMonitor } from "./SourceMonitor";
+import { TimelinePreview } from "./TimelinePreview";
+import { useTimelineStore } from "@/stores/timelineStore";
+import { Button } from "@/shared/ui/Button";
 
 export function PreviewPanel() {
+  const mode = useTimelineStore((state) => state.mode);
+  return <div className="flex h-full min-h-0 flex-col">
+    <div className="flex gap-2 border-b border-slate-800 p-2">
+      <Button size="sm" variant={mode === "source" ? "primary" : "ghost"} onClick={() => useTimelineStore.setState({ mode: "source", playing: false })}>Source</Button>
+      <Button size="sm" variant={mode === "timeline" ? "primary" : "ghost"} onClick={() => useTimelineStore.setState({ mode: "timeline" })}>Timeline preview</Button>
+    </div>
+    <div className="min-h-0 flex-1">{mode === "timeline" ? <TimelinePreview /> : <SourcePreview />}</div>
+  </div>;
+}
+
+function SourcePreview() {
   const asset = useMediaStore(selectedAsset);
   const totalAssets = useMediaStore((state) => state.assets.length);
   const importFiles = useMediaStore((state) => state.importFiles);
@@ -57,8 +72,8 @@ export function PreviewPanel() {
         </Pill>
       </div>
 
-      {asset.hasVideo ? (
-        <video
+      <SourceMonitor
+          asset={asset}
           key={previewKey}
           src={assetUrl(sourcePath, sourceTag)}
           poster={
@@ -66,19 +81,10 @@ export function PreviewPanel() {
               ? assetUrl(derivativeAbsolutePath(projectRoot, poster.relativePath), poster.updatedAt)
               : undefined
           }
-          controls
-          className="max-h-[58vh] w-full rounded-md border border-slate-800 bg-black"
         />
-      ) : (
-        <div className="flex h-40 items-center justify-center rounded-md border border-slate-800 bg-slate-950/60">
-          <span className="text-xs text-slate-500">
-            Audio-only asset — listen through the waveform below
-          </span>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 gap-3">
-        <Waveform mediaId={asset.id} cacheKey={waveform?.updatedAt ?? "not-generated"} />
+        {asset.hasAudio && <Waveform mediaId={asset.id} cacheKey={waveform?.updatedAt ?? "not-generated"} />}
         <Filmstrip asset={asset} projectRoot={projectRoot} />
       </div>
     </div>
