@@ -1,4 +1,5 @@
 import type { MediaAsset } from "@/domain/media";
+import { hookSchema, templateHook, type HookLayer } from "@/domain/hook";
 import { createTrack, defaultTransform, timelineSchema, type Timeline, type TimelineClip, type Track, type TrackKind, type Transform } from "./model";
 
 export type Edit =
@@ -9,6 +10,10 @@ export type Edit =
   | { type: "split"; ids: string[]; at: number }
   | { type: "trim"; id: string; edge: "start" | "end"; at: number }
   | { type: "transform"; id: string; patch: Partial<Transform> }
+  | { type: "hook"; patch: Partial<Pick<Timeline["hook"], "enabled" | "duration" | "background">> }
+  | { type: "addHookLayer"; role: HookLayer["role"] }
+  | { type: "hookLayer"; id: string; patch: Partial<Pick<HookLayer, "text" | "start" | "end" | "style" | "transform" | "animations">> }
+  | { type: "applyHookTemplate"; templateId: string }
   | { type: "move"; id: string; trackId: string; at: number }
   | { type: "delete"; ids: string[]; ripple?: boolean }
   | { type: "duplicate"; ids: string[] };
@@ -101,6 +106,23 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
       Object.assign(clip.transform, patch);
       break;
     }
+    case "hook":
+      Object.assign(next.hook, edit.patch);
+      break;
+    case "addHookLayer":
+      next.hook.layers.push({ id: crypto.randomUUID(), role: edit.role, text: edit.role === "main" ? "Your hook text" : "Supporting line", start: 0, end: next.hook.duration,
+        style: { fontSize: edit.role === "main" ? 82 : 34, color: edit.role === "main" ? "#ffffff" : "#fbbf24", background: "transparent", weight: edit.role === "main" ? "black" : "bold", align: "center" },
+        transform: { x: 0, y: edit.role === "main" ? 0 : 20, scale: 1, rotation: 0, opacity: 1 }, animations: [] });
+      break;
+    case "hookLayer": {
+      const layer = next.hook.layers.find((item) => item.id === edit.id);
+      if (!layer) throw new Error("Hook layer not found");
+      Object.assign(layer, edit.patch);
+      break;
+    }
+    case "applyHookTemplate":
+      next.hook = templateHook(edit.templateId);
+      break;
     case "move": {
       const { track, clip } = locate(edit.id);
       const target = trackById(edit.trackId);
@@ -144,6 +166,7 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
     }
   }
   next.duration = Math.max(0, ...next.tracks.flatMap((track) => track.clips.map((clip) => clip.timelineEnd)));
+  next.hook = hookSchema.parse(next.hook);
   const result = timelineSchema.safeParse(next);
   if (!result.success) throw new Error(result.error.issues[0]?.message ?? "Invalid edit");
   return result.data;

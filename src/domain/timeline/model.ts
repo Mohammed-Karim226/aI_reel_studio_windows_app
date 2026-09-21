@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { defaultHook, hookSchema, type HookComposition } from "@/domain/hook";
 
 export const trackKinds = ["video", "audio", "text", "captions", "graphics", "effects", "sfx"] as const;
 const time = z.number().finite().nonnegative();
@@ -36,7 +37,7 @@ export const trackSchema = z.object({
 export const timelineSchema = z.object({
   version: z.literal(1), id, name: z.string().min(1).max(128),
   width: z.number().int().positive(), height: z.number().int().positive(),
-  fps: z.number().positive().max(240), duration: time, tracks: z.array(trackSchema).max(64),
+  fps: z.number().positive().max(240), duration: time, tracks: z.array(trackSchema).max(64), hook: hookSchema,
 }).superRefine((timeline, ctx) => {
   const ids = new Set<string>();
   let duration = 0;
@@ -59,6 +60,7 @@ export type TimelineClip = z.infer<typeof clipSchema>;
 export type Track = z.infer<typeof trackSchema>;
 export type TrackKind = Track["kind"];
 export type Timeline = z.infer<typeof timelineSchema>;
+export type { HookComposition };
 export const defaultTransform = { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 };
 
 export function createTrack(kind: TrackKind, name: string): Track {
@@ -67,7 +69,7 @@ export function createTrack(kind: TrackKind, name: string): Track {
 
 export function createTimeline(format: { width: number; height: number; fps: number }): Timeline {
   return { version: 1, id: "main", name: "Reel timeline", ...format, duration: 0,
-    tracks: [createTrack("video", "Video 1"), createTrack("audio", "Audio 1")] };
+    tracks: [createTrack("video", "Video 1"), createTrack("audio", "Audio 1")], hook: structuredClone(defaultHook) };
 }
 
 export function serializeTimeline(timeline: Timeline): string {

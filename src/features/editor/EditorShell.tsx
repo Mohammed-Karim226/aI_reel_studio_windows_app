@@ -5,6 +5,7 @@ import { PreviewPanel } from "@/features/preview/PreviewPanel";
 import { TopBar } from "./TopBar";
 import { TimelinePanel } from "@/features/timeline/TimelinePanel";
 import { ClipInspector } from "@/features/timeline/ClipInspector";
+import { HookDesigner } from "@/features/hooks/HookDesigner";
 import { useTimelineStore } from "@/stores/timelineStore";
 
 /**
@@ -25,7 +26,7 @@ export function EditorShell() {
           <PreviewPanel />
         </main>
         <aside className="w-64 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-900/30">
-          {mode === "timeline" ? <ClipInspector /> : <InspectorPanel />}
+          {mode === "timeline" ? <><ClipInspector /><HookDesigner /></> : <InspectorPanel />}
         </aside>
       </div>
 

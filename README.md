@@ -3,10 +3,11 @@
 A native Windows 10/11 (x64) desktop application built with **Tauri 2**, **React**, **TypeScript**,
 and **Rust**.
 
-This repository is at **Phase 3: vertical composition foundation** (see `src/docs/MASTER_BUILD_SPEC.md`). Phase 0
+This repository is at **Phase 4: hook designer foundation** (see `src/docs/MASTER_BUILD_SPEC.md`). Phase 0
 delivered the packaged desktop shell; Phase 1 added projects, media import, and background
 derivative generation; Phase 2 added editable timeline tracks, clip operations, playback, and persistence;
-Phase 3 adds a 9:16 composition monitor, transform editing, and platform safe-zone overlays.
+Phase 3 added a 9:16 composition monitor, transform editing, and platform safe-zone overlays;
+Phase 4 adds persisted hook layers, editable keyframes, animation interpolation, and hook templates.
 
 ## Prerequisites
 

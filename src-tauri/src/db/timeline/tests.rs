@@ -1,7 +1,7 @@
 use super::*;
 use crate::db::{media, open_project_db, projects::ProjectFormat};
 use crate::media::types::{AudioStreamInfo, MediaKind, MediaMetadata};
-use crate::timeline::Transform;
+use crate::timeline::{Hook, Transform};
 
 fn fixture(conn: &Connection) -> Timeline {
     media::insert_asset(
@@ -33,6 +33,7 @@ fn fixture(conn: &Connection) -> Timeline {
         height: 1920,
         fps: 30.0,
         duration: 5.0,
+        hook: Hook::default(),
         tracks: vec![Track {
             id: "audio".into(),
             kind: "audio".into(),

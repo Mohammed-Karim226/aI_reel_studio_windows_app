@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { readyDerivative, type MediaAsset } from "@/domain/media";
+import { evaluateHookLayer } from "@/domain/hook";
 import type { TimelineClip } from "@/domain/timeline/model";
 import { activeClips, sourceTime } from "@/domain/timeline/playback";
 import { assetUrl, derivativeAbsolutePath } from "@/infrastructure/tauri/fileUrl";
@@ -41,10 +42,22 @@ export function TimelinePreview() {
         const asset = assets.find((item) => item.id === clip.sourceMediaId);
         return asset ? <TimelineMedia key={clip.id} asset={asset} clip={clip} time={time} playing={playing} visible={visible} volume={audible ? track.volume : 0} /> : null;
       })}
+      {timeline && <HookOverlay hook={timeline.hook} time={time} />}
       {safeZone !== "none" && <SafeZoneOverlay kind={safeZone} />}
       </div>
     </div>
     <p className="text-[11px] text-slate-500">Preview uses available proxies and the master timeline. Final exports render from original media.</p>
+  </div>;
+}
+
+function HookOverlay({ hook, time }: { hook: import("@/domain/hook").HookComposition; time: number }) {
+  if (!hook.enabled || !hook.layers.length || time >= hook.duration) return null;
+  return <div className="pointer-events-none absolute inset-0 z-20" style={{ background: hook.background }} aria-label="Hook composition">
+    {hook.layers.filter((layer) => layer.start <= time && layer.end > time).map((layer) => {
+      const transform = evaluateHookLayer(layer, time);
+      const weight = layer.style.weight === "black" ? 900 : layer.style.weight === "bold" ? 700 : 400;
+      return <div key={layer.id} className="absolute left-1/2 top-1/2 max-w-[90%] whitespace-pre-wrap px-3" style={{ color: layer.style.color, background: layer.style.background, fontSize: `${layer.style.fontSize}px`, fontWeight: weight, textAlign: layer.style.align, opacity: transform.opacity, transform: `translate(-50%, -50%) translate(${transform.x}%, ${transform.y}%) scale(${transform.scale}) rotate(${transform.rotation}deg)` }}>{layer.text}</div>;
+    })}
   </div>;
 }
 
