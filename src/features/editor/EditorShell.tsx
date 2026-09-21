@@ -9,7 +9,7 @@ import { useTimelineStore } from "@/stores/timelineStore";
 
 /**
  * Editor layout from spec §27: media on the left, canvas in the middle, inspector on the right,
- * jobs pinned to the bottom. Phase 2 adds the timeline track area.
+ * jobs pinned to the bottom. The timeline and vertical composition monitor share one master edit.
  */
 export function EditorShell() {
   const mode = useTimelineStore((state) => state.mode);

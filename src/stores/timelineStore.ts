@@ -19,6 +19,7 @@ interface TimelineState {
   mode: "source" | "timeline";
   zoom: number;
   snapping: boolean;
+  safeZone: "none" | "instagram" | "tiktok" | "shorts" | "facebook";
   loading: boolean;
   saving: boolean;
   error: string | null;
@@ -36,7 +37,7 @@ interface TimelineState {
 const initial = {
   projectId: null, timeline: null, past: [], future: [], saved: null, selectedIds: [],
   selectedTrackId: null, playhead: 0, playing: false, mode: "source" as const,
-  zoom: 30, snapping: true, loading: false, saving: false, error: null,
+  zoom: 30, snapping: true, safeZone: "none" as const, loading: false, saving: false, error: null,
 };
 let pendingSave: Promise<boolean> | null = null;
 let generation = 0;

@@ -1,5 +1,5 @@
 import type { MediaAsset } from "@/domain/media";
-import { createTrack, defaultTransform, timelineSchema, type Timeline, type TimelineClip, type Track, type TrackKind } from "./model";
+import { createTrack, defaultTransform, timelineSchema, type Timeline, type TimelineClip, type Track, type TrackKind, type Transform } from "./model";
 
 export type Edit =
   | { type: "addTrack"; kind: TrackKind }
@@ -8,6 +8,7 @@ export type Edit =
   | { type: "add"; trackId: string; asset: MediaAsset; start: number; sourceStart: number; sourceEnd: number }
   | { type: "split"; ids: string[]; at: number }
   | { type: "trim"; id: string; edge: "start" | "end"; at: number }
+  | { type: "transform"; id: string; patch: Partial<Transform> }
   | { type: "move"; id: string; trackId: string; at: number }
   | { type: "delete"; ids: string[]; ripple?: boolean }
   | { type: "duplicate"; ids: string[] };
@@ -87,6 +88,17 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
         clip.sourceEnd += at - clip.timelineEnd;
         clip.timelineEnd = at;
       }
+      break;
+    }
+    case "transform": {
+      const { clip } = locate(edit.id);
+      const patch = edit.patch;
+      if (patch.x !== undefined && !Number.isFinite(patch.x)) throw new Error("Transform X must be finite");
+      if (patch.y !== undefined && !Number.isFinite(patch.y)) throw new Error("Transform Y must be finite");
+      if (patch.scale !== undefined && (!Number.isFinite(patch.scale) || patch.scale <= 0)) throw new Error("Transform scale must be positive");
+      if (patch.rotation !== undefined && !Number.isFinite(patch.rotation)) throw new Error("Transform rotation must be finite");
+      if (patch.opacity !== undefined && (!Number.isFinite(patch.opacity) || patch.opacity < 0 || patch.opacity > 1)) throw new Error("Transform opacity must be between 0 and 1");
+      Object.assign(clip.transform, patch);
       break;
     }
     case "move": {

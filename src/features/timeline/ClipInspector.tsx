@@ -8,7 +8,7 @@ export function ClipInspector() {
   const ids = useTimelineStore((state) => state.selectedIds);
   const selected = timeline?.tracks.flatMap((track) => track.clips).find((clip) => clip.id === ids[0]);
   if (!selected || !timeline) return <p className="p-3 text-xs text-slate-500">Select a timeline clip to edit its timing. Drag the clip to move it; drag its edges to trim.</p>;
-  return <ClipFields key={`${selected.id}:${selected.timelineStart}:${selected.timelineEnd}`} clip={selected} tracks={timeline.tracks} />;
+  return <ClipFields key={`${selected.id}:${selected.timelineStart}:${selected.timelineEnd}:${selected.transform.x}:${selected.transform.y}:${selected.transform.scale}:${selected.transform.rotation}:${selected.transform.opacity}`} clip={selected} tracks={timeline.tracks} />;
 }
 
 function ClipFields({ clip, tracks }: { clip: TimelineClip; tracks: Track[] }) {
@@ -17,6 +17,7 @@ function ClipFields({ clip, tracks }: { clip: TimelineClip; tracks: Track[] }) {
   const [sourceOut, setSourceOut] = useState(clip.sourceEnd);
   const [trackId, setTrackId] = useState(tracks.find((track) => track.clips.some((item) => item.id === clip.id))?.id ?? "");
   const edit = useTimelineStore((state) => state.edit);
+  const updateTransform = (field: "x" | "y" | "scale" | "rotation" | "opacity", value: number) => edit({ type: "transform", id: clip.id, patch: { [field]: value } });
   return <section className="flex flex-col gap-3 p-3 text-xs">
     <h2 className="font-semibold text-slate-200">Clip timing</h2>
     <p className="break-all text-slate-400">{clip.label}</p>
@@ -27,6 +28,15 @@ function ClipFields({ clip, tracks }: { clip: TimelineClip; tracks: Track[] }) {
     <Button size="sm" onClick={() => edit({ type: "trim", id: clip.id, edge: "start", at: clip.timelineStart + sourceIn - clip.sourceStart })}>Trim start</Button>
     <label>Source out (seconds)<input aria-label="Clip source out" type="number" min="0" step="0.001" value={sourceOut} onChange={(event) => setSourceOut(Number(event.target.value))} className="mt-1 w-full rounded bg-slate-800 p-2" /></label>
     <Button size="sm" onClick={() => edit({ type: "trim", id: clip.id, edge: "end", at: clip.timelineEnd + sourceOut - clip.sourceEnd })}>Trim end</Button>
+    <div className="border-t border-slate-800 pt-3">
+      <h3 className="font-semibold text-slate-200">Composition</h3>
+      <p className="mt-1 text-[11px] text-slate-500">Offsets are relative to the 9:16 canvas.</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        {(["x", "y", "scale", "rotation", "opacity"] as const).map((field) => <label key={field} className="text-[11px] text-slate-400">{field === "scale" ? "Scale" : field === "rotation" ? "Rotation" : field === "opacity" ? "Opacity" : field.toUpperCase()}
+          <input aria-label={`Transform ${field}`} type="number" step={field === "scale" || field === "opacity" ? "0.01" : "1"} min={field === "scale" ? "0.01" : field === "opacity" ? "0" : undefined} max={field === "opacity" ? "1" : undefined} defaultValue={clip.transform[field]} onBlur={(event) => updateTransform(field, Number(event.target.value))} className="mt-1 w-full rounded bg-slate-800 p-2 text-slate-200" />
+        </label>)}
+      </div>
+    </div>
     <p className="text-slate-500">Timing is aligned to project frames. Ripple delete closes space on the selected clips’ tracks.</p>
   </section>;
 }

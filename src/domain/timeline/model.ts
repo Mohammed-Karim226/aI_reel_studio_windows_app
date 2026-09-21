@@ -3,6 +3,11 @@ import { z } from "zod";
 export const trackKinds = ["video", "audio", "text", "captions", "graphics", "effects", "sfx"] as const;
 const time = z.number().finite().nonnegative();
 const id = z.string().min(1).max(128);
+export const transformSchema = z.object({
+  x: z.number().finite(), y: z.number().finite(), scale: z.number().positive(),
+  rotation: z.number().finite(), opacity: z.number().min(0).max(1),
+});
+export type Transform = z.infer<typeof transformSchema>;
 
 export const clipSchema = z.object({
   id,
@@ -14,10 +19,7 @@ export const clipSchema = z.object({
   timelineEnd: time,
   speed: z.literal(1),
   enabled: z.boolean(),
-  transform: z.object({
-    x: z.number().finite(), y: z.number().finite(), scale: z.number().positive(),
-    rotation: z.number().finite(), opacity: z.number().min(0).max(1),
-  }),
+  transform: transformSchema,
 }).superRefine((clip, ctx) => {
   if (clip.sourceEnd <= clip.sourceStart || clip.timelineEnd <= clip.timelineStart ||
       Math.abs((clip.sourceEnd - clip.sourceStart) - (clip.timelineEnd - clip.timelineStart)) > 0.00001) {

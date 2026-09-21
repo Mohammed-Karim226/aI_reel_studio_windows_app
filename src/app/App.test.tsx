@@ -192,6 +192,8 @@ describe("App", () => {
           };
         case "list_media":
           return [audioAsset];
+        case "load_timeline":
+          return null;
         default:
           throw new Error(`unexpected command ${command}`);
       }
@@ -205,6 +207,6 @@ describe("App", () => {
       expect(screen.getByText("Media (1)")).toBeInTheDocument();
     });
     expect(screen.getAllByText("podcast.mp4").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Timeline · Phase 2 — not implemented yet/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Timeline" })).toBeInTheDocument();
   });
 });
