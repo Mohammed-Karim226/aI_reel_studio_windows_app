@@ -1,5 +1,6 @@
 import type { MediaAsset } from "@/domain/media";
 import { hookSchema, templateHook, type HookLayer } from "@/domain/hook";
+import type { ClipEffect } from "@/domain/effects";
 import {
   createTrack,
   defaultTransform,
@@ -30,6 +31,7 @@ export type Edit =
   | { type: "split"; ids: string[]; at: number }
   | { type: "trim"; id: string; edge: "start" | "end"; at: number }
   | { type: "transform"; id: string; patch: Partial<Transform> }
+  | { type: "effects"; id: string; effects: ClipEffect[] }
   | { type: "captions"; captions: Timeline["captions"] }
   | { type: "hook"; patch: Partial<Pick<Timeline["hook"], "enabled" | "duration" | "background">> }
   | { type: "addHookLayer"; role: HookLayer["role"] }
@@ -116,6 +118,7 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
         speed: 1,
         enabled: true,
         transform: { ...defaultTransform },
+        effects: [],
       });
       break;
     }
@@ -166,6 +169,13 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
       Object.assign(clip.transform, patch);
       break;
     }
+    case "effects": {
+      const { clip, track } = locate(edit.id);
+      if (track.kind !== "video" && edit.effects.length)
+        throw new Error("Clip effects require a video track");
+      clip.effects = structuredClone(edit.effects);
+      break;
+    }
     case "captions":
       next.captions = structuredClone(edit.captions);
       break;
@@ -203,6 +213,8 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
       const { track, clip } = locate(edit.id);
       const target = trackById(edit.trackId);
       editable(target);
+      if (target.kind !== "video" && clip.effects.length)
+        throw new Error("Remove the clip's effects before moving it off a video track");
       const duration = clipDuration(clip);
       clip.timelineStart = quantize(edit.at);
       clip.timelineEnd = clip.timelineStart + duration;

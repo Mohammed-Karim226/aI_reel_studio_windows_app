@@ -7,6 +7,7 @@ import { TimelinePanel } from "@/features/timeline/TimelinePanel";
 import { ClipInspector } from "@/features/timeline/ClipInspector";
 import { HookDesigner } from "@/features/hooks/HookDesigner";
 import { CaptionDesigner } from "@/features/captions/CaptionDesigner";
+import { EffectsInspector } from "@/features/effects/EffectsInspector";
 import { useTimelineStore } from "@/stores/timelineStore";
 
 /**
@@ -30,6 +31,7 @@ export function EditorShell() {
         <aside className="w-64 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-900/30">
           <div hidden={mode !== "timeline"}>
             <ClipInspector />
+            <EffectsInspector key={`effects:${projectId}`} />
             <CaptionDesigner key={projectId} />
             <HookDesigner />
           </div>

@@ -90,6 +90,7 @@ beforeEach(() => {
       speed: 1,
       enabled: true,
       transform: { ...defaultTransform },
+      effects: [],
     },
   ];
   useTimelineStore.setState({

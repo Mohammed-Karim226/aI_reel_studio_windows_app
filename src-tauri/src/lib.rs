@@ -7,6 +7,7 @@
 pub mod captions;
 pub mod commands;
 pub mod db;
+pub mod effects;
 pub mod error;
 pub mod jobs;
 pub mod logging;

@@ -42,12 +42,20 @@ pub fn load(conn: &Connection) -> AppResult<Option<Timeline>> {
         })
     })? {
         let mut track = row?;
-        let mut clips = conn.prepare("SELECT id, source_media_id, label, source_start, source_end, timeline_start, timeline_end, speed, enabled, transform_json FROM timeline_clips WHERE track_id = ?1 ORDER BY timeline_start")?;
+        let mut clips = conn.prepare("SELECT id, source_media_id, label, source_start, source_end, timeline_start, timeline_end, speed, enabled, transform_json, effects_json FROM timeline_clips WHERE track_id = ?1 ORDER BY timeline_start")?;
         for row in clips.query_map([&track.id], |row| {
             let transform: String = row.get(9)?;
             let transform = serde_json::from_str(&transform).map_err(|error| {
                 rusqlite::Error::FromSqlConversionFailure(
                     9,
+                    rusqlite::types::Type::Text,
+                    Box::new(error),
+                )
+            })?;
+            let effects: String = row.get(10)?;
+            let effects = serde_json::from_str(&effects).map_err(|error| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    10,
                     rusqlite::types::Type::Text,
                     Box::new(error),
                 )
@@ -63,6 +71,7 @@ pub fn load(conn: &Connection) -> AppResult<Option<Timeline>> {
                 speed: row.get(7)?,
                 enabled: row.get(8)?,
                 transform,
+                effects,
             })
         })? {
             track.clips.push(row?);
@@ -124,13 +133,13 @@ pub fn save(conn: &Connection, timeline: &Timeline) -> AppResult<()> {
     }
     for track in &timeline.tracks {
         for clip in &track.clips {
-            tx.execute("INSERT INTO timeline_clips (id, track_id, source_media_id, label, source_start, source_end, timeline_start, timeline_end, speed, enabled, transform_json)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11) ON CONFLICT(id) DO UPDATE SET
+            tx.execute("INSERT INTO timeline_clips (id, track_id, source_media_id, label, source_start, source_end, timeline_start, timeline_end, speed, enabled, transform_json, effects_json)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12) ON CONFLICT(id) DO UPDATE SET
                 track_id=excluded.track_id, source_media_id=excluded.source_media_id, label=excluded.label,
                 source_start=excluded.source_start, source_end=excluded.source_end, timeline_start=excluded.timeline_start,
-                timeline_end=excluded.timeline_end, speed=excluded.speed, enabled=excluded.enabled, transform_json=excluded.transform_json",
+                timeline_end=excluded.timeline_end, speed=excluded.speed, enabled=excluded.enabled, transform_json=excluded.transform_json, effects_json=excluded.effects_json",
                 params![clip.id, track.id, clip.source_media_id, clip.label, clip.source_start, clip.source_end,
-                    clip.timeline_start, clip.timeline_end, clip.speed, clip.enabled, serde_json::to_string(&clip.transform)?])?;
+                    clip.timeline_start, clip.timeline_end, clip.speed, clip.enabled, serde_json::to_string(&clip.transform)?, serde_json::to_string(&clip.effects)?])?;
         }
     }
     for id in load_ids(&tx, "SELECT id FROM tracks WHERE timeline_id = 'main'")? {

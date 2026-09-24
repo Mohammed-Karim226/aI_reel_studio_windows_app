@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { defaultHook, hookSchema, type HookComposition } from "@/domain/hook";
 import { captionTrackSchema, defaultCaptions } from "@/domain/captions";
+import { effectStackSchema } from "@/domain/effects";
 
 export const trackKinds = [
   "video",
@@ -34,6 +35,7 @@ export const clipSchema = z
     speed: z.literal(1),
     enabled: z.boolean(),
     transform: transformSchema,
+    effects: effectStackSchema.default(() => []),
   })
   .superRefine((clip, ctx) => {
     if (
@@ -49,17 +51,22 @@ export const clipSchema = z
     }
   });
 
-export const trackSchema = z.object({
-  id,
-  kind: z.enum(trackKinds),
-  name: z.string().min(1).max(128),
-  enabled: z.boolean(),
-  locked: z.boolean(),
-  muted: z.boolean(),
-  solo: z.boolean(),
-  volume: z.number().min(0).max(1),
-  clips: z.array(clipSchema).max(10000),
-});
+export const trackSchema = z
+  .object({
+    id,
+    kind: z.enum(trackKinds),
+    name: z.string().min(1).max(128),
+    enabled: z.boolean(),
+    locked: z.boolean(),
+    muted: z.boolean(),
+    solo: z.boolean(),
+    volume: z.number().min(0).max(1),
+    clips: z.array(clipSchema).max(10000),
+  })
+  .superRefine((track, ctx) => {
+    if (track.kind !== "video" && track.clips.some((clip) => clip.effects.length))
+      ctx.addIssue({ code: "custom", message: "Clip effects require a video track" });
+  });
 
 export const timelineSchema = z
   .object({

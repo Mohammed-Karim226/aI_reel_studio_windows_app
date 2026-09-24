@@ -86,6 +86,8 @@ pub struct Clip {
     pub speed: f64,
     pub enabled: bool,
     pub transform: Transform,
+    #[serde(default)]
+    pub effects: Vec<crate::effects::Effect>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -210,6 +212,10 @@ impl Timeline {
             clips.sort_by(|a, b| a.timeline_start.total_cmp(&b.timeline_start));
             let mut end = 0.0;
             for clip in clips {
+                if track.kind != "video" && !clip.effects.is_empty() {
+                    return Err(invalid("visual effects require a video track"));
+                }
+                crate::effects::validate(&clip.effects)?;
                 let t = &clip.transform;
                 if clip.id.is_empty()
                     || clip.id.len() > 128

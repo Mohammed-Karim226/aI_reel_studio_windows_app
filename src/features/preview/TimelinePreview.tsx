@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { readyDerivative, type MediaAsset } from "@/domain/media";
 import { evaluateHookLayer, type HookComposition } from "@/domain/hook";
 import { CaptionOverlay } from "@/features/captions/CaptionOverlay";
+import { EffectPreview } from "@/features/effects/EffectPreview";
 import type { TimelineClip } from "@/domain/timeline/model";
 import { activeClips, sourceTime } from "@/domain/timeline/playback";
 import { assetUrl, derivativeAbsolutePath } from "@/infrastructure/tauri/fileUrl";
@@ -82,6 +83,7 @@ export function TimelinePreview() {
                 playing={playing}
                 visible={visible}
                 volume={audible ? track.volume : 0}
+                designWidth={timeline?.width ?? 1080}
               />
             ) : null;
           })}
@@ -154,6 +156,7 @@ function TimelineMedia({
   playing,
   visible,
   volume,
+  designWidth,
 }: {
   asset: MediaAsset;
   clip: TimelineClip;
@@ -161,21 +164,29 @@ function TimelineMedia({
   playing: boolean;
   visible: boolean;
   volume: number;
+  designWidth: number;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const [effectsSource, setEffectsSource] = useState<string | null>(null);
   const root = useWorkspaceStore((state) => state.project?.rootPath ?? "");
   const proxy = readyDerivative(asset, "proxy");
   const path = proxy?.relativePath
     ? derivativeAbsolutePath(root, proxy.relativePath)
     : asset.originalPath;
   const src = assetUrl(path, proxy?.updatedAt ?? asset.importedAt);
+  const effectsEnabled =
+    visible && asset.kind !== "audio" && clip.effects.some((effect) => effect.enabled);
+  const effectsReady = effectsEnabled && effectsSource === src;
+  const onEffectsReady = useCallback(
+    (ready: boolean) => setEffectsSource(ready ? src : null),
+    [src],
+  );
   const desired = sourceTime(clip, time);
   const desiredRef = useRef(desired);
-  const playingRef = useRef(playing);
   useEffect(() => {
     desiredRef.current = desired;
-    playingRef.current = playing;
-  }, [desired, playing]);
+  }, [desired]);
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
@@ -195,33 +206,53 @@ function TimelineMedia({
     transform: `translate(${clip.transform.x}%, ${clip.transform.y}%) scale(${clip.transform.scale}) rotate(${clip.transform.rotation}deg)`,
     opacity: clip.transform.opacity,
   };
+  const effectPreview = effectsEnabled ? (
+    <EffectPreview
+      mediaRef={asset.kind === "image" ? imageRef : ref}
+      sourceKey={src}
+      effects={clip.effects}
+      sourceSeconds={desired}
+      designWidth={designWidth}
+      style={style}
+      onReadyChange={onEffectsReady}
+    />
+  ) : null;
   if (asset.kind === "image")
     return visible ? (
-      <img
-        src={src}
-        alt={clip.label}
-        style={style}
-        className="absolute h-full w-full object-contain"
-      />
+      <>
+        <img
+          ref={imageRef}
+          crossOrigin="anonymous"
+          src={src}
+          alt={clip.label}
+          style={{ ...style, visibility: effectsReady ? "hidden" : undefined }}
+          className="absolute h-full w-full object-contain"
+        />
+        {effectPreview}
+      </>
     ) : null;
   return (
-    <video
-      ref={ref}
-      src={src}
-      style={style}
-      className={visible ? "absolute h-full w-full object-contain" : "hidden"}
-      playsInline
-      preload="auto"
-      onLoadedMetadata={() => {
-        if (ref.current) ref.current.currentTime = desiredRef.current;
-      }}
-      onError={() =>
-        useTimelineStore.setState({
-          playing: false,
-          error: `Cannot preview ${asset.fileName}. Check the source or regenerate its proxy.`,
-        })
-      }
-    />
+    <>
+      <video
+        ref={ref}
+        crossOrigin="anonymous"
+        src={src}
+        style={{ ...style, visibility: effectsReady ? "hidden" : undefined }}
+        className={visible ? "absolute h-full w-full object-contain" : "hidden"}
+        playsInline
+        preload="auto"
+        onLoadedMetadata={() => {
+          if (ref.current) ref.current.currentTime = desiredRef.current;
+        }}
+        onError={() =>
+          useTimelineStore.setState({
+            playing: false,
+            error: `Cannot preview ${asset.fileName}. Check the source or regenerate its proxy.`,
+          })
+        }
+      />
+      {effectPreview}
+    </>
   );
 }
 
