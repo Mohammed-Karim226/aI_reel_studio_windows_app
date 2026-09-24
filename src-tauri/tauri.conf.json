@@ -32,6 +32,10 @@
   "bundle": {
     "active": true,
     "targets": ["nsis", "msi"],
+    "resources": {
+      "../scripts/setup-transcription.ps1": "speech-setup/setup-transcription.ps1",
+      "resources/speech-setup.txt": "speech-setup/README.txt"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

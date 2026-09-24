@@ -40,7 +40,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
 
       // Derivative artifacts only exist once the job finishes; refresh just that asset so the
       // library shows the new thumbnail/proxy/waveform without reloading everything.
-      if (!isActiveJob(job) && job.mediaAssetId) {
+      if (!isActiveJob(job) && job.mediaAssetId && job.kind !== "transcription") {
         void useMediaStore.getState().refreshAsset(job.mediaAssetId);
       }
     });

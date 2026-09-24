@@ -3,10 +3,31 @@
 A native Windows 10/11 (x64) desktop application built with **Tauri 2**, **React**, **TypeScript**,
 and **Rust**.
 
-This repository is at **Phase 1: media foundation** (see `src/docs/MASTER_BUILD_SPEC.md`). Phase 0
-delivered the packaged desktop shell; Phase 1 adds projects, media import, and background
-derivative generation (proxy, thumbnail, filmstrip, waveform). Timeline editing is Phase 2 and is
-labelled as not implemented in the UI.
+This repository is at **Phase 5: captions** (see `src/docs/MASTER_BUILD_SPEC.md`). Phase 0
+delivered the packaged desktop shell; Phase 1 added projects, media import, and background
+derivative generation; Phase 2 added editable timeline tracks, clip operations, playback, and persistence;
+Phase 3 added a 9:16 composition monitor, transform editing, and platform safe-zone overlays;
+Phase 4 added persisted hook text layers, keyframe interpolation, and hook templates;
+Phase 5 adds local transcription, editable word timing, Arabic/English captions, nine caption styles,
+word highlighting, and animation. See [Phase 5 setup and workflow](src/docs/PHASE_5_IMPLEMENTATION.md).
+
+Caption generation requires **Python with faster-whisper** and an existing local CTranslate2 Whisper
+model. Caption editing and styling work without a model. Models and Python packages are not bundled
+or downloaded automatically.
+
+In the desktop app, use **Captions → Generate from speech → First-time setup → Open setup folder**
+for the included setup helper and instructions. **Save and check setup** verifies the interpreter,
+model, language support, and FFmpeg before generation. Settings are saved in the native app database.
+
+For a development checkout, prepare the speech environment explicitly with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/setup-transcription.ps1
+```
+
+The helper requires Python 3.10+, installs into an isolated environment, and downloads a multilingual
+model. Use `-Model tiny` for a smaller model or `-CheckOnly` to inspect an existing setup offline.
+In an installed app, it uses your local application data directory so no administrator access is needed.
 
 ## Prerequisites
 
@@ -96,6 +117,8 @@ npm install
 - Content Security Policy is set in `src-tauri/tauri.conf.json`; relaxations must be justified
   per feature. The readable scope of the asset protocol is extended at runtime only for the open
   project directory and the sources it references.
+- The desktop close handler saves outstanding edits and cancels/waits for background jobs before
+  destroying the window. Failed saves or jobs that cannot stop leave the editor open with an error.
 - Installers are produced to `src-tauri/target/release/bundle/` (`nsis/` and `msi/`).
 
 ## Quality gates

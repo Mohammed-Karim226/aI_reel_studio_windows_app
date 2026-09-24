@@ -5,6 +5,7 @@ const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: invokeMock,
+  isTauri: () => false,
   convertFileSrc: (path: string) => `asset://localhost/${encodeURIComponent(path)}`,
 }));
 
@@ -19,7 +20,9 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
 import App from "./App";
 import { useJobsStore } from "@/stores/jobsStore";
 import { useMediaStore } from "@/stores/mediaStore";
+import { useTranscriptionStore } from "@/stores/transcriptionStore";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { defaultTranscriptionSetup } from "@/domain/transcriptionSetup";
 
 const ffmpegAvailable = {
   available: true,
@@ -65,6 +68,15 @@ const audioAsset = {
 };
 
 function resetStores() {
+  localStorage.clear();
+  useTranscriptionStore.setState({
+    setup: { ...defaultTranscriptionSetup },
+    loaded: false,
+    loading: false,
+    checking: false,
+    readiness: null,
+    error: null,
+  });
   useWorkspaceStore.setState({
     status: "booting",
     appInfo: null,
@@ -72,6 +84,7 @@ function resetStores() {
     recentProjects: [],
     project: null,
     busy: false,
+    closing: false,
     error: null,
   });
   useMediaStore.setState({
@@ -192,6 +205,9 @@ describe("App", () => {
           };
         case "list_media":
           return [audioAsset];
+        case "load_timeline":
+        case "get_transcription_setup":
+          return null;
         default:
           throw new Error(`unexpected command ${command}`);
       }
@@ -205,6 +221,6 @@ describe("App", () => {
       expect(screen.getByText("Media (1)")).toBeInTheDocument();
     });
     expect(screen.getAllByText("podcast.mp4").length).toBeGreaterThan(0);
-    expect(screen.getByText(/Timeline · Phase 2 — not implemented yet/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Timeline" })).toBeInTheDocument();
   });
 });

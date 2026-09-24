@@ -207,6 +207,16 @@ pub fn list_assets(conn: &Connection) -> AppResult<Vec<MediaAsset>> {
 }
 
 pub fn delete_asset(conn: &Connection, id: &str) -> AppResult<()> {
+    let referenced: bool = conn.query_row(
+        "SELECT EXISTS(SELECT 1 FROM timeline_clips WHERE source_media_id = ?1)",
+        [id],
+        |row| row.get(0),
+    )?;
+    if referenced {
+        return Err(AppError::InvalidInput(
+            "remove this media's clips from the timeline and save before removing the media".into(),
+        ));
+    }
     let removed = conn.execute("DELETE FROM media_assets WHERE id = ?1", [id])?;
     if removed == 0 {
         return Err(AppError::MediaAssetNotFound(id.to_string()));

@@ -14,6 +14,8 @@ export default tseslint.config(
     ignores: [
       "dist",
       "coverage",
+      ".venv-captions",
+      ".runtime-check",
       ".kilo",
       "src-tauri/target",
       "src-tauri/gen",

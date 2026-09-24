@@ -34,7 +34,7 @@ export function MediaCard({ asset, projectRoot, selected, onSelect, onRemove }: 
       : null;
 
   return (
-    <li>
+    <li className="group">
       <button
         type="button"
         onClick={onSelect}

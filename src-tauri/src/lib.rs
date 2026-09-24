@@ -4,14 +4,18 @@
 //! `db`). Nothing below `commands` knows about Tauri, so the domain logic stays testable with
 //! plain `cargo test`.
 
+pub mod captions;
 pub mod commands;
 pub mod db;
+pub mod effects;
 pub mod error;
 pub mod jobs;
 pub mod logging;
 pub mod media;
 pub mod project;
 pub mod state;
+pub mod timeline;
+pub mod transcription;
 
 use serde::Serialize;
 use tauri::Manager;
@@ -67,6 +71,13 @@ pub fn run() {
             commands::jobs::list_jobs,
             commands::jobs::cancel_job,
             commands::jobs::clear_finished_jobs,
+            commands::timeline::load_timeline,
+            commands::timeline::save_timeline,
+            commands::captions::transcribe_media,
+            commands::captions::open_transcription_setup_folder,
+            commands::captions::get_transcription_setup,
+            commands::captions::save_transcription_setup,
+            commands::captions::check_transcription_setup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

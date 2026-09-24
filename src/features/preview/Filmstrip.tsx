@@ -6,7 +6,7 @@ interface FilmstripProps {
   projectRoot: string;
 }
 
-/** Sampled frames of the source, used as a visual index until the Phase 2 timeline exists. */
+/** Sampled frames of the source, used as a visual index while editing the master timeline. */
 export function Filmstrip({ asset, projectRoot }: FilmstripProps) {
   const filmstrip = readyDerivative(asset, "filmstrip");
 

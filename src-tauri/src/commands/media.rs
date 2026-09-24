@@ -61,7 +61,7 @@ pub async fn import_media(
 
     // Fail before touching anything if derivatives could never be produced (spec §29).
     let tools = state.ffmpeg()?;
-    state.project_root()?;
+    let import_project_id = state.with_project(|project| Ok(project.summary.id.clone()))?;
     // Derivative tunables live in the application database, never in the project database.
     let options = pipeline::derivative_options(&state.app_db())?;
 
@@ -78,11 +78,14 @@ pub async fn import_media(
 
         // Re-importing a file that is already in the library is a no-op, not an error.
         let existing = state.with_project(|project| {
+            ensure_import_project(&import_project_id, &project.summary.id)?;
             media_db::find_asset_id_by_path(&project.db, &path.to_string_lossy())
         })?;
         if let Some(asset_id) = existing {
-            let asset =
-                state.with_project(|project| media_db::get_asset(&project.db, &asset_id))?;
+            let asset = state.with_project(|project| {
+                ensure_import_project(&import_project_id, &project.summary.id)?;
+                media_db::get_asset(&project.db, &asset_id)
+            })?;
             outcome.imported.push(asset);
             continue;
         }
@@ -113,6 +116,7 @@ pub async fn import_media(
         let jobs = state.jobs();
 
         let asset = state.with_project(|project| {
+            ensure_import_project(&import_project_id, &project.summary.id)?;
             media_db::insert_asset(
                 &project.db,
                 &asset_id,
@@ -180,6 +184,8 @@ pub fn remove_media(state: State<'_, AppState>, media_id: String) -> AppResult<(
 
     state.with_project(|project| {
         let asset = media_db::get_asset(&project.db, &media_id)?;
+        // Delete first: a referenced asset must retain all of its preview artifacts.
+        media_db::delete_asset(&project.db, &media_id)?;
         for derivative in &asset.derivatives {
             if let Some(relative) = derivative.relative_path.as_deref() {
                 if let Ok(path) = project::resolve_relative(&project.root, relative) {
@@ -187,8 +193,17 @@ pub fn remove_media(state: State<'_, AppState>, media_id: String) -> AppResult<(
                 }
             }
         }
-        media_db::delete_asset(&project.db, &media_id)
+        Ok(())
     })
+}
+
+fn ensure_import_project(expected: &str, actual: &str) -> AppResult<()> {
+    if expected != actual {
+        return Err(AppError::InvalidInput(
+            "the project changed during import; reopen the original project to continue".into(),
+        ));
+    }
+    Ok(())
 }
 
 /// Reports, for every derivative kind, whether it applies to this asset.
