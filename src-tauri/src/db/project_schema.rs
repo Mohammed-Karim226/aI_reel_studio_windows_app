@@ -5,7 +5,7 @@ use super::migrations::Migration;
 /// Holds every project-scoped entity from spec §26. Media binaries are never stored here — only
 /// paths relative to the project root plus probed metadata (spec §26: "Never store massive video
 /// binary data directly inside SQLite").
-pub const PROJECT_MIGRATIONS: [Migration; 2] = [
+pub const PROJECT_MIGRATIONS: [Migration; 3] = [
     Migration {
         version: 1,
         name: "project_foundation",
@@ -240,5 +240,10 @@ CREATE INDEX idx_ai_suggestions_analysis ON ai_suggestions (analysis_id);
         version: 2,
         name: "timeline_hook_json",
         sql: r##"ALTER TABLE timelines ADD COLUMN hook_json TEXT NOT NULL DEFAULT '{"enabled":true,"duration":1.5,"background":"#111827","layers":[]}';"##,
+    },
+    Migration {
+        version: 3,
+        name: "timeline_captions_json",
+        sql: r##"ALTER TABLE timelines ADD COLUMN captions_json TEXT NOT NULL DEFAULT '{"enabled":true,"style":{"preset":"classic","fontFamily":"Arial","fontSize":64,"fontWeight":700,"color":"#ffffff","highlightColor":"#fbbf24","outlineColor":"#000000","outlineWidth":2,"shadow":true,"background":"transparent","x":50,"y":78,"lineHeight":1.2,"maxWidth":86,"direction":"auto","animation":"none","highlighting":"none"},"segments":[]}';"##,
     },
 ];

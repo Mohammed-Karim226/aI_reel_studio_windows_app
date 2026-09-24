@@ -12,13 +12,29 @@ import { Button } from "@/shared/ui/Button";
 
 export function PreviewPanel() {
   const mode = useTimelineStore((state) => state.mode);
-  return <div className="flex h-full min-h-0 flex-col">
-    <div className="flex gap-2 border-b border-slate-800 p-2">
-      <Button size="sm" variant={mode === "source" ? "primary" : "ghost"} onClick={() => useTimelineStore.setState({ mode: "source", playing: false })}>Source</Button>
-      <Button size="sm" variant={mode === "timeline" ? "primary" : "ghost"} onClick={() => useTimelineStore.setState({ mode: "timeline" })}>Timeline preview</Button>
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex gap-2 border-b border-slate-800 p-2">
+        <Button
+          size="sm"
+          variant={mode === "source" ? "primary" : "ghost"}
+          onClick={() => useTimelineStore.setState({ mode: "source", playing: false })}
+        >
+          Source
+        </Button>
+        <Button
+          size="sm"
+          variant={mode === "timeline" ? "primary" : "ghost"}
+          onClick={() => useTimelineStore.setState({ mode: "timeline" })}
+        >
+          Timeline preview
+        </Button>
+      </div>
+      <div className="min-h-0 flex-1">
+        {mode === "timeline" ? <TimelinePreview /> : <SourcePreview />}
+      </div>
     </div>
-    <div className="min-h-0 flex-1">{mode === "timeline" ? <TimelinePreview /> : <SourcePreview />}</div>
-  </div>;
+  );
 }
 
 function SourcePreview() {
@@ -73,18 +89,20 @@ function SourcePreview() {
       </div>
 
       <SourceMonitor
-          asset={asset}
-          key={previewKey}
-          src={assetUrl(sourcePath, sourceTag)}
-          poster={
-            poster?.relativePath
-              ? assetUrl(derivativeAbsolutePath(projectRoot, poster.relativePath), poster.updatedAt)
-              : undefined
-          }
-        />
+        asset={asset}
+        key={previewKey}
+        src={assetUrl(sourcePath, sourceTag)}
+        poster={
+          poster?.relativePath
+            ? assetUrl(derivativeAbsolutePath(projectRoot, poster.relativePath), poster.updatedAt)
+            : undefined
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3">
-        {asset.hasAudio && <Waveform mediaId={asset.id} cacheKey={waveform?.updatedAt ?? "not-generated"} />}
+        {asset.hasAudio && (
+          <Waveform mediaId={asset.id} cacheKey={waveform?.updatedAt ?? "not-generated"} />
+        )}
         <Filmstrip asset={asset} projectRoot={projectRoot} />
       </div>
     </div>

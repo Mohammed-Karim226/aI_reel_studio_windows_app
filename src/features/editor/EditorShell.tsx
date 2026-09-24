@@ -6,6 +6,7 @@ import { TopBar } from "./TopBar";
 import { TimelinePanel } from "@/features/timeline/TimelinePanel";
 import { ClipInspector } from "@/features/timeline/ClipInspector";
 import { HookDesigner } from "@/features/hooks/HookDesigner";
+import { CaptionDesigner } from "@/features/captions/CaptionDesigner";
 import { useTimelineStore } from "@/stores/timelineStore";
 
 /**
@@ -14,6 +15,7 @@ import { useTimelineStore } from "@/stores/timelineStore";
  */
 export function EditorShell() {
   const mode = useTimelineStore((state) => state.mode);
+  const projectId = useTimelineStore((state) => state.projectId);
   return (
     <div className="flex h-screen flex-col overflow-hidden">
       <TopBar />
@@ -26,7 +28,12 @@ export function EditorShell() {
           <PreviewPanel />
         </main>
         <aside className="w-64 shrink-0 overflow-y-auto border-l border-slate-800 bg-slate-900/30">
-          {mode === "timeline" ? <><ClipInspector /><HookDesigner /></> : <InspectorPanel />}
+          <div hidden={mode !== "timeline"}>
+            <ClipInspector />
+            <CaptionDesigner key={projectId} />
+            <HookDesigner />
+          </div>
+          {mode !== "timeline" && <InspectorPanel />}
         </aside>
       </div>
 

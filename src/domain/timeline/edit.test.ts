@@ -14,7 +14,17 @@ const asset = mediaAssetSchema.parse({
   durationSec: 20,
   hasVideo: true,
   hasAudio: true,
-  video: { codec: "h264", width: 1920, height: 1080, displayWidth: 1920, displayHeight: 1080, fps: 30, rotation: 0, pixFmt: "yuv420p", bitRate: null },
+  video: {
+    codec: "h264",
+    width: 1920,
+    height: 1080,
+    displayWidth: 1920,
+    displayHeight: 1080,
+    fps: 30,
+    rotation: 0,
+    pixFmt: "yuv420p",
+    bitRate: null,
+  },
   audio: { codec: "aac", channels: 2, sampleRate: 48000, bitRate: null },
   importedAt: "2026-01-01T00:00:00Z",
   derivatives: [],
@@ -40,7 +50,15 @@ function timelineWithClip(): Timeline {
 
 describe("timeline composition edits", () => {
   it("updates a clip transform without changing its timing", () => {
-    const result = applyEdit(timelineWithClip(), { type: "transform", id: "clip-1", patch: { x: 12, y: -8, scale: 1.25, rotation: 4, opacity: 0.8 } }, [asset]);
+    const result = applyEdit(
+      timelineWithClip(),
+      {
+        type: "transform",
+        id: "clip-1",
+        patch: { x: 12, y: -8, scale: 1.25, rotation: 4, opacity: 0.8 },
+      },
+      [asset],
+    );
     const clip = result.tracks[0].clips[0];
     expect(clip.transform).toEqual({ x: 12, y: -8, scale: 1.25, rotation: 4, opacity: 0.8 });
     expect(clip.timelineStart).toBe(0);
@@ -48,7 +66,15 @@ describe("timeline composition edits", () => {
   });
 
   it("rejects invalid transform values", () => {
-    expect(() => applyEdit(timelineWithClip(), { type: "transform", id: "clip-1", patch: { opacity: 2 } }, [asset])).toThrow("opacity");
-    expect(() => applyEdit(timelineWithClip(), { type: "transform", id: "clip-1", patch: { scale: 0 } }, [asset])).toThrow("scale");
+    expect(() =>
+      applyEdit(timelineWithClip(), { type: "transform", id: "clip-1", patch: { opacity: 2 } }, [
+        asset,
+      ]),
+    ).toThrow("opacity");
+    expect(() =>
+      applyEdit(timelineWithClip(), { type: "transform", id: "clip-1", patch: { scale: 0 } }, [
+        asset,
+      ]),
+    ).toThrow("scale");
   });
 });

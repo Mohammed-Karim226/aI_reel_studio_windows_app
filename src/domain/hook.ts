@@ -19,40 +19,49 @@ const animationSchema = z.object({
   keyframes: z.array(keyframeSchema).min(1).max(100),
 });
 
-export const hookLayerSchema = z.object({
-  id: z.string().min(1).max(128),
-  role: z.enum(["main", "secondary"]),
-  text: z.string().max(500),
-  start: time,
-  end: time,
-  style: z.object({
-    fontSize: z.number().positive(),
-    color: z.string().min(1).max(32),
-    background: z.string().max(32),
-    weight: z.enum(["regular", "bold", "black"]),
-    align: z.enum(["left", "center", "right"]),
-  }),
-  transform: transformSchema,
-  animations: z.array(animationSchema).max(10),
-}).superRefine((layer, ctx) => {
-  if (layer.end <= layer.start) ctx.addIssue({ code: "custom", message: "Hook layer must have a positive duration" });
-  for (const animation of layer.animations) {
-    if (animation.keyframes.some((frame, index) => index > 0 && frame.time < animation.keyframes[index - 1].time)) {
-      ctx.addIssue({ code: "custom", message: "Hook keyframes must be ordered by time" });
+export const hookLayerSchema = z
+  .object({
+    id: z.string().min(1).max(128),
+    role: z.enum(["main", "secondary"]),
+    text: z.string().max(500),
+    start: time,
+    end: time,
+    style: z.object({
+      fontSize: z.number().positive(),
+      color: z.string().min(1).max(32),
+      background: z.string().max(32),
+      weight: z.enum(["regular", "bold", "black"]),
+      align: z.enum(["left", "center", "right"]),
+    }),
+    transform: transformSchema,
+    animations: z.array(animationSchema).max(10),
+  })
+  .superRefine((layer, ctx) => {
+    if (layer.end <= layer.start)
+      ctx.addIssue({ code: "custom", message: "Hook layer must have a positive duration" });
+    for (const animation of layer.animations) {
+      if (
+        animation.keyframes.some(
+          (frame, index) => index > 0 && frame.time < animation.keyframes[index - 1].time,
+        )
+      ) {
+        ctx.addIssue({ code: "custom", message: "Hook keyframes must be ordered by time" });
+      }
     }
-  }
-});
+  });
 
-export const hookSchema = z.object({
-  enabled: z.boolean(),
-  duration: time,
-  background: z.string().min(1).max(32),
-  layers: z.array(hookLayerSchema).max(32),
-}).superRefine((hook, ctx) => {
-  if (hook.layers.some((layer) => layer.end > hook.duration + 0.00001)) {
-    ctx.addIssue({ code: "custom", message: "Hook layers cannot exceed the hook duration" });
-  }
-});
+export const hookSchema = z
+  .object({
+    enabled: z.boolean(),
+    duration: time,
+    background: z.string().min(1).max(32),
+    layers: z.array(hookLayerSchema).max(32),
+  })
+  .superRefine((hook, ctx) => {
+    if (hook.layers.some((layer) => layer.end > hook.duration + 0.00001)) {
+      ctx.addIssue({ code: "custom", message: "Hook layers cannot exceed the hook duration" });
+    }
+  });
 
 export type HookLayer = z.infer<typeof hookLayerSchema>;
 export type HookComposition = z.infer<typeof hookSchema>;
@@ -67,21 +76,63 @@ export const defaultHook: HookComposition = {
 
 export function createHookLayer(role: HookLayer["role"] = "main"): HookLayer {
   return {
-    id: crypto.randomUUID(), role, text: role === "main" ? "Your hook text" : "Supporting line", start: 0, end: 1.5,
-    style: { fontSize: role === "main" ? 82 : 34, color: role === "main" ? "#ffffff" : "#fbbf24", background: "transparent", weight: role === "main" ? "black" : "bold", align: "center" },
-    transform: { x: 0, y: role === "main" ? 0 : 20, scale: 1, rotation: 0, opacity: 1 }, animations: [],
+    id: crypto.randomUUID(),
+    role,
+    text: role === "main" ? "Your hook text" : "Supporting line",
+    start: 0,
+    end: 1.5,
+    style: {
+      fontSize: role === "main" ? 82 : 34,
+      color: role === "main" ? "#ffffff" : "#fbbf24",
+      background: "transparent",
+      weight: role === "main" ? "black" : "bold",
+      align: "center",
+    },
+    transform: { x: 0, y: role === "main" ? 0 : 20, scale: 1, rotation: 0, opacity: 1 },
+    animations: [],
   };
 }
 
-export const popAnimations: HookLayer["animations"] = [{
-  property: "scale",
-  keyframes: [{ time: 0, value: 0.85, easing: "ease-out" }, { time: 0.15, value: 1.05, easing: "ease-out" }, { time: 0.3, value: 1, easing: "linear" }],
-}];
+export const popAnimations: HookLayer["animations"] = [
+  {
+    property: "scale",
+    keyframes: [
+      { time: 0, value: 0.85, easing: "ease-out" },
+      { time: 0.15, value: 1.05, easing: "ease-out" },
+      { time: 0.3, value: 1, easing: "linear" },
+    ],
+  },
+];
+
+export function createPopAnimations(start = 0): HookLayer["animations"] {
+  return popAnimations.map((animation) => ({
+    ...animation,
+    keyframes: animation.keyframes.map((frame) => ({ ...frame, time: start + frame.time })),
+  }));
+}
 
 export const hookTemplates = [
-  { id: "bold-question", category: "Podcast", name: "Bold Question", main: "What nobody tells you", secondary: "The answer changes everything" },
-  { id: "strong-claim", category: "Business", name: "Strong Claim", main: "This changes the game", secondary: "Here is why" },
-  { id: "curiosity-gap", category: "Educational", name: "Curiosity Gap", main: "Wait until you see this", secondary: "The detail most people miss" },
+  {
+    id: "bold-question",
+    category: "Podcast",
+    name: "Bold Question",
+    main: "What nobody tells you",
+    secondary: "The answer changes everything",
+  },
+  {
+    id: "strong-claim",
+    category: "Business",
+    name: "Strong Claim",
+    main: "This changes the game",
+    secondary: "Here is why",
+  },
+  {
+    id: "curiosity-gap",
+    category: "Educational",
+    name: "Curiosity Gap",
+    main: "Wait until you see this",
+    secondary: "The detail most people miss",
+  },
 ] as const;
 
 export function templateHook(templateId: string): HookComposition {
@@ -90,16 +141,53 @@ export function templateHook(templateId: string): HookComposition {
     ...defaultHook,
     layers: [
       {
-        id: crypto.randomUUID(), role: "main", text: template.main, start: 0, end: 1.5,
-        style: { fontSize: 82, color: "#ffffff", background: "transparent", weight: "black", align: "center" },
+        id: crypto.randomUUID(),
+        role: "main",
+        text: template.main,
+        start: 0,
+        end: 1.5,
+        style: {
+          fontSize: 82,
+          color: "#ffffff",
+          background: "transparent",
+          weight: "black",
+          align: "center",
+        },
         transform: { x: 0, y: 0, scale: 1, rotation: 0, opacity: 1 },
-        animations: [{ property: "scale", keyframes: [{ time: 0, value: 0.85, easing: "ease-out" }, { time: 0.15, value: 1.05, easing: "ease-out" }, { time: 0.3, value: 1, easing: "linear" }] }],
+        animations: [
+          {
+            property: "scale",
+            keyframes: [
+              { time: 0, value: 0.85, easing: "ease-out" },
+              { time: 0.15, value: 1.05, easing: "ease-out" },
+              { time: 0.3, value: 1, easing: "linear" },
+            ],
+          },
+        ],
       },
       {
-        id: crypto.randomUUID(), role: "secondary", text: template.secondary, start: 0.2, end: 1.5,
-        style: { fontSize: 34, color: "#fbbf24", background: "transparent", weight: "bold", align: "center" },
+        id: crypto.randomUUID(),
+        role: "secondary",
+        text: template.secondary,
+        start: 0.2,
+        end: 1.5,
+        style: {
+          fontSize: 34,
+          color: "#fbbf24",
+          background: "transparent",
+          weight: "bold",
+          align: "center",
+        },
         transform: { x: 0, y: 20, scale: 1, rotation: 0, opacity: 1 },
-        animations: [{ property: "opacity", keyframes: [{ time: 0.2, value: 0, easing: "linear" }, { time: 0.45, value: 1, easing: "ease-out" }] }],
+        animations: [
+          {
+            property: "opacity",
+            keyframes: [
+              { time: 0.2, value: 0, easing: "linear" },
+              { time: 0.45, value: 1, easing: "ease-out" },
+            ],
+          },
+        ],
       },
     ],
   });
@@ -107,10 +195,14 @@ export function templateHook(templateId: string): HookComposition {
 
 function ease(progress: number, easing: Easing): number {
   switch (easing) {
-    case "ease-in": return progress * progress;
-    case "ease-out": return 1 - (1 - progress) * (1 - progress);
-    case "ease-in-out": return progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-    default: return progress;
+    case "ease-in":
+      return progress * progress;
+    case "ease-out":
+      return 1 - (1 - progress) * (1 - progress);
+    case "ease-in-out":
+      return progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+    default:
+      return progress;
   }
 }
 
@@ -129,6 +221,11 @@ export function evaluateKeyframes(keyframes: Keyframe[], time: number, fallback:
 
 export function evaluateHookLayer(layer: HookLayer, time: number): HookLayer["transform"] {
   const result = { ...layer.transform };
-  for (const animation of layer.animations) result[animation.property] = evaluateKeyframes(animation.keyframes, time, result[animation.property]);
+  for (const animation of layer.animations)
+    result[animation.property] = evaluateKeyframes(
+      animation.keyframes,
+      time,
+      result[animation.property],
+    );
   return result;
 }

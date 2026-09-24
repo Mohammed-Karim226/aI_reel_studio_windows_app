@@ -15,6 +15,8 @@ pub mod keys {
     pub const MEDIA_CACHE_DIR: &str = "media.cacheDir";
     /// Target height in pixels for generated proxies.
     pub const PROXY_HEIGHT: &str = "media.proxyHeight";
+    /// Native caption setup, written as one JSON value so all fields change together.
+    pub const TRANSCRIPTION_SETUP: &str = "transcription.setup";
 }
 
 pub fn get(conn: &Connection, key: &str) -> AppResult<Option<String>> {

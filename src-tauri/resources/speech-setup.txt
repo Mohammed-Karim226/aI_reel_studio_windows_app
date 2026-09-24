@@ -1,0 +1,25 @@
+AI Reel Studio - local speech setup
+
+You can use your existing Python/faster-whisper environment and local model.
+Otherwise, install Python 3.10 or newer, then open PowerShell in this folder and run:
+
+  powershell -ExecutionPolicy Bypass -File .\setup-transcription.ps1
+
+This explicit setup downloads faster-whisper and a multilingual small Whisper model.
+Allow roughly 1 GB of free space and an internet connection. Nothing is downloaded
+when you check setup or generate captions inside the app.
+
+The runtime is installed under your local application data, not Program Files.
+The script prints the Python executable and local model folder to select in the app.
+Choose Captions > Generate from speech, enter those paths, then Save and check setup.
+
+Options:
+  -Model tiny        Smaller multilingual model for a quick test.
+  -CheckOnly         Check an existing environment without network access or changes.
+  -SkipModelDownload Install the Python dependency and use an existing local model.
+
+FFmpeg and ffprobe are separate prerequisites. Install them from a trusted source
+and use the app's Locate ffmpeg.exe control if automatic discovery cannot find them.
+
+Arabic requires a multilingual model; English-only .en models will be rejected.
+Python, FFmpeg, and model binaries are not included in the AI Reel Studio installer.

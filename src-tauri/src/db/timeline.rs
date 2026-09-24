@@ -6,7 +6,7 @@ use crate::timeline::{invalid, Clip, Timeline, Track};
 pub fn load(conn: &Connection) -> AppResult<Option<Timeline>> {
     let result = conn
         .query_row(
-            "SELECT id, name, width, height, fps, duration_sec, hook_json FROM timelines WHERE id = 'main'",
+            "SELECT id, name, width, height, fps, duration_sec, hook_json, captions_json FROM timelines WHERE id = 'main'",
             [],
             |row| {
                 Ok(Timeline {
@@ -18,6 +18,7 @@ pub fn load(conn: &Connection) -> AppResult<Option<Timeline>> {
                     fps: row.get(4)?,
                     duration: row.get(5)?,
                     hook: serde_json::from_str(&row.get::<_, String>(6)?).map_err(|error| rusqlite::Error::FromSqlConversionFailure(6, rusqlite::types::Type::Text, Box::new(error)))?,
+                    captions: serde_json::from_str(&row.get::<_, String>(7)?).map_err(|error| rusqlite::Error::FromSqlConversionFailure(7, rusqlite::types::Type::Text, Box::new(error)))?,
                     tracks: vec![],
                 })
             },
@@ -95,10 +96,10 @@ pub fn save(conn: &Connection, timeline: &Timeline) -> AppResult<()> {
         }
     }
     let now = chrono::Utc::now().to_rfc3339();
-    tx.execute("INSERT INTO timelines (id, name, duration_sec, width, height, fps, hook_json, created_at, updated_at)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8) ON CONFLICT(id) DO UPDATE SET
-        name=excluded.name, duration_sec=excluded.duration_sec, width=excluded.width, height=excluded.height, fps=excluded.fps, hook_json=excluded.hook_json, updated_at=excluded.updated_at",
-        params![timeline.id, timeline.name, timeline.duration, timeline.width, timeline.height, timeline.fps, serde_json::to_string(&timeline.hook)?, now])?;
+    tx.execute("INSERT INTO timelines (id, name, duration_sec, width, height, fps, hook_json, captions_json, created_at, updated_at)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9) ON CONFLICT(id) DO UPDATE SET
+        name=excluded.name, duration_sec=excluded.duration_sec, width=excluded.width, height=excluded.height, fps=excluded.fps, hook_json=excluded.hook_json, captions_json=excluded.captions_json, updated_at=excluded.updated_at",
+        params![timeline.id, timeline.name, timeline.duration, timeline.width, timeline.height, timeline.fps, serde_json::to_string(&timeline.hook)?, serde_json::to_string(&timeline.captions)?, now])?;
     // Clear order slots before updating, so reordering cannot violate the unique index.
     tx.execute(
         "UPDATE tracks SET order_index = -order_index - 1 WHERE timeline_id = 'main'",

@@ -39,6 +39,7 @@ pub enum JobKind {
     Filmstrip,
     Waveform,
     Proxy,
+    Transcription,
 }
 
 impl JobKind {
@@ -48,6 +49,7 @@ impl JobKind {
             JobKind::Filmstrip => "filmstrip",
             JobKind::Waveform => "waveform",
             JobKind::Proxy => "proxy",
+            JobKind::Transcription => "transcription",
         }
     }
 }

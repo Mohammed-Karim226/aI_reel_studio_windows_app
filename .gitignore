@@ -1,6 +1,8 @@
 node_modules/
 dist/
 coverage/
+.venv-captions/
+.runtime-check/
 src-tauri/target/
 src-tauri/gen/schemas/
 *.local

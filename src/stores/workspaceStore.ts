@@ -24,6 +24,7 @@ interface WorkspaceState {
   recentProjects: ProjectSummary[];
   project: ProjectInfo | null;
   busy: boolean;
+  closing: boolean;
   error: string | null;
   initialize: () => Promise<void>;
   refreshFfmpeg: (refresh?: boolean) => Promise<void>;
@@ -42,6 +43,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   recentProjects: [],
   project: null,
   busy: false,
+  closing: false,
   error: null,
 
   initialize: async () => {
@@ -115,7 +117,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       set({ error: "Wait for the media import to finish before closing the project." });
       return;
     }
-    if (isTimelineDirty(useTimelineStore.getState()) && !(await useTimelineStore.getState().save())) return;
+    if (isTimelineDirty(useTimelineStore.getState()) && !(await useTimelineStore.getState().save()))
+      return;
     try {
       await closeProjectCommand();
     } catch (error) {

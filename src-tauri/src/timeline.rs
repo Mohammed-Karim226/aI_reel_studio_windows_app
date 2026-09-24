@@ -113,6 +113,8 @@ pub struct Timeline {
     pub fps: f64,
     pub duration: f64,
     pub hook: Hook,
+    #[serde(default)]
+    pub captions: crate::captions::CaptionTrack,
     pub tracks: Vec<Track>,
 }
 
@@ -122,6 +124,7 @@ pub fn invalid(message: &str) -> AppError {
 
 impl Timeline {
     pub fn validate(&self) -> AppResult<()> {
+        self.captions.validate()?;
         if self.version != 1
             || self.id != "main"
             || self.name.is_empty()

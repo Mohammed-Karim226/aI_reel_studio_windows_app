@@ -34,7 +34,7 @@ export function JobsPanel() {
       <div className="max-h-44 overflow-y-auto border-t border-slate-800/70">
         {jobs.length === 0 ? (
           <p className="px-3 py-4 text-xs text-slate-500">
-            Background work (proxies, thumbnails, waveforms) appears here.
+            Background work (proxies, thumbnails, waveforms, transcription) appears here.
           </p>
         ) : (
           <ul className="divide-y divide-slate-800/70">

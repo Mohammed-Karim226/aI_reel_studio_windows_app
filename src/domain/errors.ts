@@ -14,6 +14,8 @@ export const APP_ERROR_KINDS = [
   "serde",
   "ffmpeg_unavailable",
   "tool_failed",
+  "transcription_unavailable",
+  "transcription_failed",
   "media_file_not_found",
   "unsupported_media",
   "project_not_found",

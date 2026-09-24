@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluateKeyframes, hookSchema, templateHook } from "./hook";
+import {
+  createHookLayer,
+  createPopAnimations,
+  evaluateHookLayer,
+  evaluateKeyframes,
+  hookSchema,
+  templateHook,
+} from "./hook";
 
 describe("hook animation", () => {
   it("interpolates keyframes with easing", () => {
@@ -18,5 +25,15 @@ describe("hook animation", () => {
     expect(hook.layers).toHaveLength(2);
     expect(hook.layers[0].animations[0]?.keyframes.length).toBeGreaterThan(1);
     expect(hookSchema.safeParse(hook).success).toBe(true);
+  });
+
+  it("starts a pop entrance when a delayed hook layer becomes visible", () => {
+    const layer = createHookLayer("secondary");
+    layer.start = 0.8;
+    layer.animations = createPopAnimations(layer.start);
+    expect(evaluateHookLayer(layer, layer.start).scale).toBe(0.85);
+    expect(evaluateHookLayer(layer, layer.start + 0.15).scale).toBe(1.05);
+    expect(evaluateHookLayer(layer, layer.start + 0.3).scale).toBe(1);
+    expect(createPopAnimations()[0].keyframes[0].time).toBe(0);
   });
 });

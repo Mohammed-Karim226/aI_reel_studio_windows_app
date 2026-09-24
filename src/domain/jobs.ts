@@ -2,7 +2,13 @@ import { z } from "zod";
 
 import { appErrorSchema, type AppError } from "./errors";
 
-export const jobKindSchema = z.enum(["thumbnail", "filmstrip", "waveform", "proxy"]);
+export const jobKindSchema = z.enum([
+  "thumbnail",
+  "filmstrip",
+  "waveform",
+  "proxy",
+  "transcription",
+]);
 
 export type JobKind = z.infer<typeof jobKindSchema>;
 

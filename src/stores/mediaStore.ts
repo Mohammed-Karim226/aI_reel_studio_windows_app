@@ -89,16 +89,16 @@ export const useMediaStore = create<MediaState>((set, get) => ({
 
   importFiles: async () => {
     try {
-    const selection = await open({
-      multiple: true,
-      title: "Import media",
-      filters: [{ name: "Media", extensions: MEDIA_EXTENSIONS }],
-    });
-    if (!selection) {
-      return;
-    }
-    const paths = Array.isArray(selection) ? selection : [selection];
-    await get().importPaths(paths);
+      const selection = await open({
+        multiple: true,
+        title: "Import media",
+        filters: [{ name: "Media", extensions: MEDIA_EXTENSIONS }],
+      });
+      if (!selection) {
+        return;
+      }
+      const paths = Array.isArray(selection) ? selection : [selection];
+      await get().importPaths(paths);
     } catch (error) {
       set({ error: errorMessage(error) });
     }
@@ -135,8 +135,16 @@ export const useMediaStore = create<MediaState>((set, get) => ({
 
   remove: async (mediaId) => {
     try {
-      if (useTimelineStore.getState().timeline?.tracks.some((track) => track.clips.some((clip) => clip.sourceMediaId === mediaId))) {
-        throw new Error("Remove this media's clips from the timeline and save before removing the media.");
+      if (
+        useTimelineStore
+          .getState()
+          .timeline?.tracks.some((track) =>
+            track.clips.some((clip) => clip.sourceMediaId === mediaId),
+          )
+      ) {
+        throw new Error(
+          "Remove this media's clips from the timeline and save before removing the media.",
+        );
       }
       await removeMedia(mediaId);
       await get().load();
@@ -160,7 +168,14 @@ export const useMediaStore = create<MediaState>((set, get) => ({
   },
 
   reset: () => {
-    set({ assets: [], selectedId: null, error: null, notice: null, importing: false, loading: false });
+    set({
+      assets: [],
+      selectedId: null,
+      error: null,
+      notice: null,
+      importing: false,
+      loading: false,
+    });
   },
 }));
 

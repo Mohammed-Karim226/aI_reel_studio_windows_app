@@ -21,6 +21,12 @@ pub enum AppError {
     #[error("{0}")]
     FfmpegUnavailable(String),
 
+    #[error("{0}")]
+    TranscriptionUnavailable(String),
+
+    #[error("{0}")]
+    TranscriptionFailed(String),
+
     #[error("{tool} failed ({code}): {stderr}")]
     ToolFailed {
         tool: String,
@@ -65,6 +71,8 @@ impl AppError {
             AppError::Io(_) => "io",
             AppError::Serde(_) => "serde",
             AppError::FfmpegUnavailable(_) => "ffmpeg_unavailable",
+            AppError::TranscriptionUnavailable(_) => "transcription_unavailable",
+            AppError::TranscriptionFailed(_) => "transcription_failed",
             AppError::ToolFailed { .. } => "tool_failed",
             AppError::MediaFileNotFound(_) => "media_file_not_found",
             AppError::UnsupportedMedia(_) => "unsupported_media",
@@ -82,7 +90,10 @@ impl AppError {
     pub fn is_retryable(&self) -> bool {
         matches!(
             self,
-            AppError::Io(_) | AppError::ToolFailed { .. } | AppError::Internal(_)
+            AppError::Io(_)
+                | AppError::ToolFailed { .. }
+                | AppError::Internal(_)
+                | AppError::TranscriptionFailed(_)
         )
     }
 }
