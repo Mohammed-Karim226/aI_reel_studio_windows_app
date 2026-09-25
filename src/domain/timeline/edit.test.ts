@@ -3,7 +3,13 @@ import { describe, expect, it } from "vitest";
 import { mediaAssetSchema } from "@/domain/media";
 import { createEffect, evaluateEffects } from "@/domain/effects";
 import { applyEdit } from "./edit";
-import { createTimeline, deserializeTimeline, serializeTimeline, type Timeline } from "./model";
+import {
+  createTimeline,
+  createTrack,
+  deserializeTimeline,
+  serializeTimeline,
+  type Timeline,
+} from "./model";
 
 const asset = mediaAssetSchema.parse({
   id: "media-1",
@@ -78,6 +84,126 @@ describe("timeline composition edits", () => {
         asset,
       ]),
     ).toThrow("scale");
+  });
+});
+
+describe("candidate clip append", () => {
+  it("appends reviewed ranges in source order without changing existing content", () => {
+    const original = timelineWithClip();
+    original.hook.enabled = true;
+    original.captions.enabled = false;
+    const before = structuredClone(original);
+    const result = applyEdit(
+      original,
+      {
+        type: "appendCandidates",
+        mediaId: asset.id,
+        ranges: [
+          { start: 12, end: 15, label: "Later thought" },
+          { start: 6, end: 9, label: "Earlier thought" },
+        ],
+      },
+      [asset],
+    );
+    expect(original).toEqual(before);
+    expect(result.tracks[0].clips[0]).toEqual(before.tracks[0].clips[0]);
+    expect(result.hook).toEqual(before.hook);
+    expect(result.captions).toEqual(before.captions);
+    expect(
+      result.tracks[0].clips
+        .slice(1)
+        .map((clip) => [clip.label, clip.sourceStart, clip.timelineStart, clip.timelineEnd]),
+    ).toEqual([
+      ["Earlier thought", 6, 5, 8],
+      ["Later thought", 12, 8, 11],
+    ]);
+    expect(result.duration).toBe(11);
+  });
+
+  it("creates an enabled video track when existing video tracks are locked or disabled", () => {
+    const original = timelineWithClip();
+    original.tracks[0].locked = true;
+    const disabled = createTrack("video", "Hidden video");
+    disabled.enabled = false;
+    original.tracks.push(disabled);
+    const result = applyEdit(
+      original,
+      {
+        type: "appendCandidates",
+        mediaId: asset.id,
+        ranges: [{ start: 6, end: 9, label: "Candidate" }],
+      },
+      [asset],
+    );
+    expect(result.tracks.slice(0, 3)).toEqual(original.tracks);
+    expect(result.tracks[3]).toMatchObject({ kind: "video", enabled: true, locked: false });
+    expect(result.tracks[3].clips[0].timelineStart).toBe(5);
+  });
+
+  it("rounds inward at a fractional media end and appends after all tracks", () => {
+    const original = timelineWithClip();
+    original.tracks[1].clips = [
+      { ...original.tracks[0].clips[0], id: "audio-clip", sourceEnd: 10.01, timelineEnd: 10.01 },
+    ];
+    original.duration = 10.01;
+    const source = { ...asset, durationSec: 19.999 };
+    const result = applyEdit(
+      original,
+      {
+        type: "appendCandidates",
+        mediaId: source.id,
+        ranges: [{ start: 18.001, end: source.durationSec, label: "Final words" }],
+      },
+      [source],
+    );
+    const clip = result.tracks[0].clips[1];
+    expect(clip.sourceStart).toBeGreaterThanOrEqual(18.001);
+    expect(clip.sourceEnd).toBeLessThanOrEqual(source.durationSec);
+    expect(clip.timelineStart).toBeGreaterThanOrEqual(10.01);
+    expect(clip.sourceStart * 30).toBeCloseTo(Math.round(clip.sourceStart * 30));
+    expect(clip.sourceEnd * 30).toBeCloseTo(Math.round(clip.sourceEnd * 30));
+    expect(clip.timelineEnd - clip.timelineStart).toBeCloseTo(clip.sourceEnd - clip.sourceStart);
+  });
+
+  it.each([
+    [{ start: -1, end: 5, label: "Negative" }],
+    [{ start: 5, end: 21, label: "Beyond media" }],
+    [{ start: 5, end: 5, label: "Empty" }],
+    [{ start: NaN, end: 5, label: "Not finite" }],
+    [{ start: 5.001, end: 5.01, label: "No complete frame" }],
+    [{ start: 5, end: 6, label: "a".repeat(513) }],
+  ])("rejects an invalid candidate atomically: %j", (range) => {
+    const original = timelineWithClip();
+    const before = structuredClone(original);
+    expect(() =>
+      applyEdit(
+        original,
+        {
+          type: "appendCandidates",
+          mediaId: asset.id,
+          ranges: [{ start: 2, end: 3, label: "Valid" }, range],
+        },
+        [asset],
+      ),
+    ).toThrow();
+    expect(original).toEqual(before);
+  });
+
+  it("rejects unavailable media, excessive batch size, and exhausted track capacity", () => {
+    const original = timelineWithClip();
+    const range = { start: 6, end: 9, label: "Candidate" };
+    const edit = { type: "appendCandidates" as const, mediaId: asset.id, ranges: [range] };
+    expect(() => applyEdit(original, edit, [])).toThrow("available video");
+    expect(() => applyEdit(original, edit, [{ ...asset, hasAudio: false }])).toThrow("with audio");
+    expect(() => applyEdit(original, { ...edit, ranges: [] }, [asset])).toThrow("1 and 50");
+    expect(() =>
+      applyEdit(original, { ...edit, ranges: Array.from({ length: 51 }, () => range) }, [asset]),
+    ).toThrow("1 and 50");
+    original.tracks[0].locked = true;
+    while (original.tracks.length < 64) original.tracks.push(createTrack("audio", "Audio"));
+    const before = structuredClone(original);
+    expect(() => applyEdit(original, edit, [asset])).toThrow("unlocked video track");
+    expect(original).toEqual(before);
   });
 });
 

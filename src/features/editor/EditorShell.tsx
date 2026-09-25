@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { AiCutPanel } from "@/features/aiCut/AiCutPanel";
+import { Button } from "@/shared/ui/Button";
 import { JobsPanel } from "@/features/jobs/JobsPanel";
 import { InspectorPanel } from "@/features/inspector/InspectorPanel";
 import { MediaPanel } from "@/features/media/MediaPanel";
@@ -15,6 +18,7 @@ import { useTimelineStore } from "@/stores/timelineStore";
  * jobs pinned to the bottom. The timeline and vertical composition monitor share one master edit.
  */
 export function EditorShell() {
+  const [libraryTab, setLibraryTab] = useState<"media" | "aiCut">("media");
   const mode = useTimelineStore((state) => state.mode);
   const projectId = useTimelineStore((state) => state.projectId);
   return (
@@ -22,8 +26,31 @@ export function EditorShell() {
       <TopBar />
 
       <div className="flex min-h-0 flex-1">
-        <aside className="w-60 shrink-0 border-r border-slate-800 bg-slate-900/30">
-          <MediaPanel />
+        <aside
+          className={`${libraryTab === "aiCut" ? "w-80" : "w-60"} flex shrink-0 flex-col border-r border-slate-800 bg-slate-900/30`}
+        >
+          <div className="flex gap-2 border-b border-slate-800 p-2" aria-label="Library tools">
+            <Button
+              size="sm"
+              variant={libraryTab === "media" ? "primary" : "ghost"}
+              onClick={() => setLibraryTab("media")}
+            >
+              Media
+            </Button>
+            <Button
+              size="sm"
+              variant={libraryTab === "aiCut" ? "primary" : "ghost"}
+              onClick={() => setLibraryTab("aiCut")}
+            >
+              AI Cut
+            </Button>
+          </div>
+          <div hidden={libraryTab !== "media"} className="min-h-0 flex-1">
+            <MediaPanel />
+          </div>
+          <div hidden={libraryTab !== "aiCut"} className="min-h-0 flex-1 overflow-y-auto">
+            <AiCutPanel key={projectId} />
+          </div>
         </aside>
         <main className="min-w-0 flex-1">
           <PreviewPanel />

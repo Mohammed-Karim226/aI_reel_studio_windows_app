@@ -28,6 +28,11 @@ export type Edit =
       sourceStart: number;
       sourceEnd: number;
     }
+  | {
+      type: "appendCandidates";
+      mediaId: string;
+      ranges: Array<{ start: number; end: number; label: string }>;
+    }
   | { type: "split"; ids: string[]; at: number }
   | { type: "trim"; id: string; edge: "start" | "end"; at: number }
   | { type: "transform"; id: string; patch: Partial<Transform> }
@@ -120,6 +125,75 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
         transform: { ...defaultTransform },
         effects: [],
       });
+      break;
+    }
+    case "appendCandidates": {
+      const asset = assets.find((item) => item.id === edit.mediaId);
+      if (
+        !asset ||
+        asset.kind !== "video" ||
+        !asset.hasVideo ||
+        !asset.hasAudio ||
+        !Number.isFinite(asset.durationSec) ||
+        asset.durationSec <= 0
+      )
+        throw new Error("Choose an available video with audio for AI Cut");
+      if (!edit.ranges.length || edit.ranges.length > 50)
+        throw new Error("Choose between 1 and 50 candidate clips");
+      // Round inward so neither source boundary can cross the reviewed range or media end.
+      const ranges = edit.ranges.map((range) => {
+        if (
+          !Number.isFinite(range.start) ||
+          !Number.isFinite(range.end) ||
+          range.start < 0 ||
+          range.end <= range.start ||
+          range.end > asset.durationSec
+        )
+          throw new Error("Candidate ranges must stay inside the source video");
+        if (typeof range.label !== "string" || range.label.length > 512)
+          throw new Error("Candidate labels must be at most 512 characters");
+        const start = Math.ceil(range.start * next.fps) / next.fps;
+        const end = Math.floor(range.end * next.fps) / next.fps;
+        if (end <= start) throw new Error("Candidate ranges must contain at least one full frame");
+        return { ...range, start, end };
+      });
+      let track = next.tracks.find(
+        (item) =>
+          item.kind === "video" &&
+          item.enabled &&
+          !item.locked &&
+          acceptsMedia(item, asset) &&
+          item.clips.length + ranges.length <= 10000,
+      );
+      if (!track) {
+        if (next.tracks.length >= 64)
+          throw new Error("Enable an unlocked video track with room for these clips");
+        track = createTrack(
+          "video",
+          `Video ${next.tracks.filter((item) => item.kind === "video").length + 1}`,
+        );
+        next.tracks.push(track);
+      }
+      let at = Math.ceil(next.duration * next.fps) / next.fps;
+      for (const range of ranges.sort(
+        (left, right) => left.start - right.start || left.end - right.end,
+      )) {
+        const end = at + range.end - range.start;
+        track.clips.push({
+          id: crypto.randomUUID(),
+          sourceMediaId: asset.id,
+          label: range.label,
+          sourceStart: range.start,
+          sourceEnd: range.end,
+          timelineStart: at,
+          timelineEnd: end,
+          speed: 1,
+          enabled: true,
+          transform: { ...defaultTransform },
+          effects: [],
+        });
+        at = end;
+      }
       break;
     }
     case "split":

@@ -8,6 +8,7 @@ import { Waveform } from "./Waveform";
 import { SourceMonitor } from "./SourceMonitor";
 import { TimelinePreview } from "./TimelinePreview";
 import { useTimelineStore } from "@/stores/timelineStore";
+import { useSourcePreviewStore } from "@/stores/sourcePreviewStore";
 import { Button } from "@/shared/ui/Button";
 
 export function PreviewPanel() {
@@ -38,6 +39,7 @@ export function PreviewPanel() {
 }
 
 function SourcePreview() {
+  const range = useSourcePreviewStore((state) => state.range);
   const asset = useMediaStore(selectedAsset);
   const totalAssets = useMediaStore((state) => state.assets.length);
   const importFiles = useMediaStore((state) => state.importFiles);
@@ -90,7 +92,8 @@ function SourcePreview() {
 
       <SourceMonitor
         asset={asset}
-        key={previewKey}
+        key={`${previewKey}:${range?.mediaId === asset.id ? range.id : "full"}`}
+        previewRange={range?.mediaId === asset.id ? range : undefined}
         src={assetUrl(sourcePath, sourceTag)}
         poster={
           poster?.relativePath

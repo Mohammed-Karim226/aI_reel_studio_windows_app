@@ -3,17 +3,30 @@
 A native Windows 10/11 (x64) desktop application built with **Tauri 2**, **React**, **TypeScript**,
 and **Rust**.
 
-This repository is at **Phase 5: captions** (see `src/docs/MASTER_BUILD_SPEC.md`). Phase 0
+This repository is at **Phase 7: AI Cut** (see `src/docs/MASTER_BUILD_SPEC.md`). Phase 0
 delivered the packaged desktop shell; Phase 1 added projects, media import, and background
 derivative generation; Phase 2 added editable timeline tracks, clip operations, playback, and persistence;
 Phase 3 added a 9:16 composition monitor, transform editing, and platform safe-zone overlays;
 Phase 4 added persisted hook text layers, keyframe interpolation, and hook templates;
 Phase 5 adds local transcription, editable word timing, Arabic/English captions, nine caption styles,
-word highlighting, and animation. See [Phase 5 setup and workflow](src/docs/PHASE_5_IMPLEMENTATION.md).
+word highlighting, and animation. Phase 6 adds stacked visual effects and editable keyframes.
+Phase 7 adds local transcript analysis, ranked candidate clips, source-range preview, and explicit
+selection that appends clips in one undoable edit. Existing timeline edits are preserved.
 
-Caption generation requires **Python with faster-whisper** and an existing local CTranslate2 Whisper
+See [caption setup](src/docs/PHASE_5_IMPLEMENTATION.md),
+[effects](src/docs/PHASE_6_IMPLEMENTATION.md), and
+[AI Cut workflow and limits](src/docs/PHASE_7_IMPLEMENTATION.md).
+
+Caption generation and AI Cut require **Python with faster-whisper** and an existing local CTranslate2 Whisper
 model. Caption editing and styling work without a model. Models and Python packages are not bundled
 or downloaded automatically.
+
+Open **AI Cut** beside **Media**, select a video with audio, check **Speech setup**, and choose
+**Find candidate clips**. Analyze up to one hour per request. Ranking uses adjustable local rules
+over the recognized transcript; review suggestions before adding them. It does not predict audience
+performance. Use **Preview suggestion** and **Play candidate** to review a range, then select clips
+and choose **Add selected**. Saving persists accepted clips; analysis drafts last for the current
+project session. The next planned phase is **Phase 8: AI Edit Assistant**.
 
 In the desktop app, use **Captions → Generate from speech → First-time setup → Open setup folder**
 for the included setup helper and instructions. **Save and check setup** verifies the interpreter,

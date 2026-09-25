@@ -124,4 +124,5 @@ and speed depend on the chosen multilingual model and hardware. Caption motion/s
 renders in the preview; burned-in export is part of Phase 9. GPU/provider selection, batch
 transcription, and importing/exporting subtitle files remain outside this phase.
 
-The next planned phase is **Phase 6: Effects**.
+Phase 6 effects are now implemented; see [Phase 6](PHASE_6_IMPLEMENTATION.md).
+Development has continued through [Phase 7: AI Cut](PHASE_7_IMPLEMENTATION.md).

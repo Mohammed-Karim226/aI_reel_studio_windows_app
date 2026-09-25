@@ -9,27 +9,61 @@ import { useTimelineStore } from "@/stores/timelineStore";
 import { EffectsInspector } from "./EffectsInspector";
 
 const asset = mediaAssetSchema.parse({
-  id: "video1", originalPath: "C:\\video.mp4", fileName: "video.mp4", kind: "video",
-  container: "mp4", sizeBytes: 100, durationSec: 30, hasVideo: true, hasAudio: false,
-  video: { codec: "h264", width: 1920, height: 1080, displayWidth: 1920, displayHeight: 1080,
-    fps: 30, rotation: 0, pixFmt: "yuv420p", bitRate: null },
-  audio: null, importedAt: "2026-09-24", derivatives: [],
+  id: "video1",
+  originalPath: "C:\\video.mp4",
+  fileName: "video.mp4",
+  kind: "video",
+  container: "mp4",
+  sizeBytes: 100,
+  durationSec: 30,
+  hasVideo: true,
+  hasAudio: false,
+  video: {
+    codec: "h264",
+    width: 1920,
+    height: 1080,
+    displayWidth: 1920,
+    displayHeight: 1080,
+    fps: 30,
+    rotation: 0,
+    pixFmt: "yuv420p",
+    bitRate: null,
+  },
+  audio: null,
+  importedAt: "2026-09-24",
+  derivatives: [],
 });
 
 beforeEach(() => {
   useTimelineStore.getState().reset();
   useMediaStore.setState({ assets: [asset] });
   const initial = createTimeline({ width: 1080, height: 1920, fps: 30 });
-  const timeline = applyEdit(initial, {
-    type: "add", trackId: initial.tracks[0].id, asset, start: 5, sourceStart: 10, sourceEnd: 15,
-  }, [asset]);
-  useTimelineStore.setState({ timeline, selectedIds: [timeline.tracks[0].clips[0].id],
-    selectedTrackId: timeline.tracks[0].id, playhead: 5, mode: "timeline" });
+  const timeline = applyEdit(
+    initial,
+    {
+      type: "add",
+      trackId: initial.tracks[0].id,
+      asset,
+      start: 5,
+      sourceStart: 10,
+      sourceEnd: 15,
+    },
+    [asset],
+  );
+  useTimelineStore.setState({
+    timeline,
+    selectedIds: [timeline.tracks[0].clips[0].id],
+    selectedTrackId: timeline.tracks[0].id,
+    playhead: 5,
+    mode: "timeline",
+  });
 });
 
 const clip = () => useTimelineStore.getState().timeline!.tracks[0].clips[0];
 const add = (type: string) => {
-  fireEvent.change(screen.getByRole("combobox", { name: "Effect type" }), { target: { value: type } });
+  fireEvent.change(screen.getByRole("combobox", { name: "Effect type" }), {
+    target: { value: type },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Add" }));
 };
 const blurValue = (label: string, value: string) => {
@@ -84,10 +118,15 @@ describe("Effects inspector", () => {
 
   it("preserves precise curves when a displayed field blurs without an edit", () => {
     const effect = createEffect("zoom");
-    effect.animations = [{ property: "scale", keyframes: [
-      { time: 10, value: 1, easing: "linear" },
-      { time: 13, value: 2, easing: "linear" },
-    ] }];
+    effect.animations = [
+      {
+        property: "scale",
+        keyframes: [
+          { time: 10, value: 1, easing: "linear" },
+          { time: 13, value: 2, easing: "linear" },
+        ],
+      },
+    ];
     useTimelineStore.getState().edit({ type: "effects", id: clip().id, effects: [effect] });
     useTimelineStore.getState().seek(6);
     render(<EffectsInspector />);
@@ -103,7 +142,9 @@ describe("Effects inspector", () => {
     blurValue("Punch Zoom scale keyframe time 10.12", "0");
     expect(clip().effects).toEqual(before);
     expect(useTimelineStore.getState().error).toBeTruthy();
-    act(() => useTimelineStore.getState().edit({ type: "trim", id: clip().id, edge: "start", at: 5.3 }));
+    act(() =>
+      useTimelineStore.getState().edit({ type: "trim", id: clip().id, edge: "start", at: 5.3 }),
+    );
     expect(screen.getAllByText(/outside trim/).length).toBeGreaterThan(0);
     expect(clip().effects).toEqual(before);
   });

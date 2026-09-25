@@ -165,7 +165,7 @@ fn animation_properties_are_known_unique_and_bounded() {
     effect.animations.push(effect.animations[0].clone());
     assert!(validate(&[effect]).is_err());
     let mut effect = sample(EffectType::Blur);
-    effect.animations = animated().animations.repeat(2);
+    effect.animations = vec![animated().animations[0].clone(); 2];
     assert!(validate(&[effect]).is_err());
     let mut effect = animated();
     effect.animations[0].keyframes.clear();

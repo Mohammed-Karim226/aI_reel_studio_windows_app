@@ -62,7 +62,9 @@ export function EffectsInspector() {
       ) : (
         <>
           <p className="mt-1 break-words text-slate-400">{clip.label}</p>
-          {track.locked && <p className="mt-2 text-amber-300">Unlock this track to edit effects.</p>}
+          {track.locked && (
+            <p className="mt-2 text-amber-300">Unlock this track to edit effects.</p>
+          )}
           <fieldset disabled={track.locked} className="mt-3 min-w-0 space-y-3">
             <div className="flex items-end gap-2">
               <label className="min-w-0 flex-1">
@@ -147,7 +149,8 @@ function EffectCard({
       className="rounded border border-slate-700 p-2"
     >
       <summary className="cursor-pointer font-medium text-slate-200">
-        {index + 1}. {definition.label}{!effect.enabled && " (off)"}
+        {index + 1}. {definition.label}
+        {!effect.enabled && " (off)"}
       </summary>
       <div className="mt-2 flex flex-wrap items-center gap-1">
         <label className="mr-auto flex items-center gap-1 text-slate-400">
@@ -163,17 +166,31 @@ function EffectCard({
           />
           Enabled
         </label>
-        <Button size="sm" variant="ghost" aria-label="Move effect up" disabled={index === 0} onClick={() => move(-1)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="Move effect up"
+          disabled={index === 0}
+          onClick={() => move(-1)}
+        >
           Up
         </Button>
-        <Button size="sm" variant="ghost" aria-label="Move effect down" disabled={index === count - 1} onClick={() => move(1)}>
+        <Button
+          size="sm"
+          variant="ghost"
+          aria-label="Move effect down"
+          disabled={index === count - 1}
+          onClick={() => move(1)}
+        >
           Down
         </Button>
         <Button
           size="sm"
           variant="ghost"
           aria-label={`Remove ${definition.label}`}
-          onClick={() => changeStack(clip.id, (effects) => effects.filter((item) => item.id !== effect.id))}
+          onClick={() =>
+            changeStack(clip.id, (effects) => effects.filter((item) => item.id !== effect.id))
+          }
         >
           Remove
         </Button>
@@ -181,7 +198,13 @@ function EffectCard({
       <p className="mt-2 text-[11px] text-slate-500">{definition.description}</p>
       <div className="mt-3 space-y-3">
         {definition.parameters.map((parameter) => (
-          <ParameterEditor key={parameter.key} clip={clip} effect={effect} parameter={parameter} fps={fps} />
+          <ParameterEditor
+            key={parameter.key}
+            clip={clip}
+            effect={effect}
+            parameter={parameter}
+            fps={fps}
+          />
         ))}
       </div>
     </details>
@@ -233,7 +256,11 @@ function ParameterEditor({
           variant="ghost"
           aria-label={`${atKeyframe ? "Update" : "Add"} ${label} keyframe`}
           disabled={!inClip || (!atKeyframe && (animation?.keyframes.length ?? 0) >= 100)}
-          onClick={() => changeEffect(clip.id, effect.id, (item) => setKeyframe(item, parameter.key, time, value))}
+          onClick={() =>
+            changeEffect(clip.id, effect.id, (item) =>
+              setKeyframe(item, parameter.key, time, value),
+            )
+          }
         >
           {atKeyframe ? "Update keyframe" : "Keyframe at playhead"}
         </Button>
@@ -245,7 +272,9 @@ function ParameterEditor({
             onClick={() =>
               changeEffect(clip.id, effect.id, (item) => {
                 item.params[parameter.key] = value;
-                item.animations = item.animations.filter((entry) => entry.property !== parameter.key);
+                item.animations = item.animations.filter(
+                  (entry) => entry.property !== parameter.key,
+                );
               })
             }
           >
@@ -253,7 +282,9 @@ function ParameterEditor({
           </Button>
         )}
       </div>
-      {!inClip && <p className="text-[10px] text-slate-500">Seek inside this clip to set a keyframe.</p>}
+      {!inClip && (
+        <p className="text-[10px] text-slate-500">Seek inside this clip to set a keyframe.</p>
+      )}
       {animation && (
         <details className="mt-1 border-l border-slate-700 pl-2">
           <summary className="cursor-pointer text-[11px] text-indigo-300">
@@ -288,7 +319,9 @@ function ParameterEditor({
                       min={0}
                       max={duration}
                       step={1 / fps}
-                      onCommit={(next) => changeFrame({ time: clip.sourceStart + Math.round(next * fps) / fps })}
+                      onCommit={(next) =>
+                        changeFrame({ time: clip.sourceStart + Math.round(next * fps) / fps })
+                      }
                     />
                     <NumberField
                       label="Value"
@@ -305,9 +338,15 @@ function ParameterEditor({
                   aria-label={`${label} keyframe easing ${frame.time}`}
                   className={inputClass}
                   value={frame.easing}
-                  onChange={(event) => changeFrame({ easing: event.target.value as typeof frame.easing })}
+                  onChange={(event) =>
+                    changeFrame({ easing: event.target.value as typeof frame.easing })
+                  }
                 >
-                  {easings.map((easing) => <option key={easing} value={easing}>{easing}</option>)}
+                  {easings.map((easing) => (
+                    <option key={easing} value={easing}>
+                      {easing}
+                    </option>
+                  ))}
                 </select>
                 <div className="flex gap-1">
                   <Button
@@ -315,7 +354,11 @@ function ParameterEditor({
                     variant="ghost"
                     disabled={retained}
                     aria-label={`Seek to ${label} keyframe ${frame.time}`}
-                    onClick={() => useTimelineStore.getState().seek(clip.timelineStart + Math.min(local, Math.max(0, duration - 1 / fps)))}
+                    onClick={() =>
+                      useTimelineStore
+                        .getState()
+                        .seek(clip.timelineStart + Math.min(local, Math.max(0, duration - 1 / fps)))
+                    }
                   >
                     Seek
                   </Button>
@@ -325,9 +368,13 @@ function ParameterEditor({
                     aria-label={`Delete ${label} keyframe ${frame.time}`}
                     onClick={() =>
                       changeEffect(clip.id, effect.id, (item) => {
-                        const current = item.animations.find((entry) => entry.property === parameter.key);
+                        const current = item.animations.find(
+                          (entry) => entry.property === parameter.key,
+                        );
                         if (!current) return;
-                        current.keyframes = current.keyframes.filter((entry) => entry.time !== frame.time);
+                        current.keyframes = current.keyframes.filter(
+                          (entry) => entry.time !== frame.time,
+                        );
                         if (!current.keyframes.length) {
                           item.params[parameter.key] = value;
                           item.animations = item.animations.filter((entry) => entry !== current);
@@ -380,7 +427,9 @@ function NumberField({
         step={step}
         disabled={disabled}
         onFocus={() => useTimelineStore.setState({ playing: false })}
-        onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
         onBlur={(event) => {
           const next = event.target.valueAsNumber;
           if (!Number.isFinite(next) || next < min || next > max) {
