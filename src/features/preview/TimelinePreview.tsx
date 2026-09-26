@@ -9,9 +9,14 @@ import { assetUrl, derivativeAbsolutePath } from "@/infrastructure/tauri/fileUrl
 import { useMediaStore } from "@/stores/mediaStore";
 import { useTimelineStore } from "@/stores/timelineStore";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { useEditReviewStore } from "@/stores/editReviewStore";
+import { safeZones, type SafeZonePlatform } from "@/domain/safeZones";
+import { Button } from "@/shared/ui/Button";
 
 export function TimelinePreview() {
-  const timeline = useTimelineStore((state) => state.timeline);
+  const committedTimeline = useTimelineStore((state) => state.timeline);
+  const reviewPreview = useEditReviewStore((state) => state.preview);
+  const timeline = reviewPreview?.timeline ?? committedTimeline;
   const time = useTimelineStore((state) => state.playhead);
   const playing = useTimelineStore((state) => state.playing);
   const assets = useMediaStore((state) => state.assets);
@@ -20,20 +25,45 @@ export function TimelinePreview() {
     if (!playing) return;
     let frame = 0;
     let last = performance.now();
+    if (reviewPreview) {
+      const playhead = useTimelineStore.getState().playhead;
+      if (playhead < reviewPreview.start || playhead >= reviewPreview.end)
+        useTimelineStore.setState({ playhead: reviewPreview.start });
+    }
     const tick = (now: number) => {
       const state = useTimelineStore.getState();
-      const duration = state.timeline?.duration ?? 0;
-      const next = Math.min(duration, state.playhead + (now - last) / 1000);
+      if (!state.playing) return;
+      const preview = useEditReviewStore.getState().preview;
+      const duration = preview?.end ?? state.timeline?.duration ?? 0;
+      const next = Math.min(
+        duration,
+        Math.max(preview?.start ?? 0, state.playhead) + (now - last) / 1000,
+      );
       last = now;
       useTimelineStore.setState({ playhead: next, playing: next < duration });
       if (next < duration) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [playing]);
+  }, [playing, reviewPreview]);
   const active = timeline ? activeClips(timeline, time) : [];
   return (
     <div className="flex h-full flex-col gap-2 p-3">
+      {reviewPreview && (
+        <div
+          role="status"
+          className="flex items-center justify-between gap-2 rounded bg-amber-950/40 px-2 py-1 text-xs text-amber-200"
+        >
+          <span>Review preview</span>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => useEditReviewStore.getState().clearPreview()}
+          >
+            Exit preview
+          </Button>
+        </div>
+      )}
       <div className="flex items-center justify-between text-[11px] text-slate-500">
         <span>Vertical composition</span>
         <label className="flex items-center gap-1.5">
@@ -256,18 +286,9 @@ function TimelineMedia({
   );
 }
 
-type SafeZone = "none" | "instagram" | "tiktok" | "shorts" | "facebook";
-
-function SafeZoneOverlay({ kind }: { kind: Exclude<SafeZone, "none"> }) {
-  const label = kind === "shorts" ? "YouTube Shorts" : kind[0].toUpperCase() + kind.slice(1);
-  const inset =
-    kind === "tiktok"
-      ? "8% 6% 18%"
-      : kind === "shorts"
-        ? "7% 6% 12%"
-        : kind === "facebook"
-          ? "8% 6% 15%"
-          : "8% 7% 14%";
+function SafeZoneOverlay({ kind }: { kind: SafeZonePlatform }) {
+  const { label, top, right, bottom, left } = safeZones[kind];
+  const inset = `${top}% ${right}% ${bottom}% ${left}%`;
   return (
     <div
       className="pointer-events-none absolute z-40 border border-dashed border-amber-300/70"

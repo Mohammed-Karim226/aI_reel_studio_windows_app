@@ -38,6 +38,7 @@ export type Edit =
   | { type: "transform"; id: string; patch: Partial<Transform> }
   | { type: "effects"; id: string; effects: ClipEffect[] }
   | { type: "captions"; captions: Timeline["captions"] }
+  | { type: "setHook"; hook: Timeline["hook"] }
   | { type: "hook"; patch: Partial<Pick<Timeline["hook"], "enabled" | "duration" | "background">> }
   | { type: "addHookLayer"; role: HookLayer["role"] }
   | {
@@ -252,6 +253,9 @@ export function applyEdit(current: Timeline, edit: Edit, assets: MediaAsset[]): 
     }
     case "captions":
       next.captions = structuredClone(edit.captions);
+      break;
+    case "setHook":
+      next.hook = hookSchema.parse(edit.hook);
       break;
     case "hook":
       Object.assign(next.hook, edit.patch);
